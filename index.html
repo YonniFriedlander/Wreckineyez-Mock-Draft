@@ -755,19 +755,8 @@ function TeamManager({teams,setTeams,myTeam,setMyTeam}){
 
   return(
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
-        <span style={{fontSize:12,color:"var(--text3)"}}>
-          {teams.length} teams · drag to reorder · click name to rename
-        </span>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:13,color:"var(--text2)",fontWeight:700}}>Your team:</span>
-          <select value={myTeam} onChange={e=>setMyTeam(e.target.value)}
-            style={{width:"auto",fontSize:14,height:34,padding:"0 10px",
-              fontWeight:700,color:"var(--text)",background:"var(--s2)",
-              border:"1px solid var(--border2)",borderRadius:"var(--r)"}}>
-            {teams.map(t=><option key={t}>{t}</option>)}
-          </select>
-        </div>
+      <div style={{fontSize:12,color:"var(--text3)",marginBottom:10}}>
+        {teams.length} teams · drag to reorder · click a name to rename
       </div>
       <div className="team-list">
         {teams.map((t,i)=>(
@@ -1251,13 +1240,16 @@ function App(){
 
   const SETUP_TABS=[["settings","Settings"],["board","Draft Board"]];
 
-  /* ─── Jazz swoosh SVG for header ─── */
-  const JazzEye=()=>(
-    <svg width="20" height="14" viewBox="0 0 22 15" fill="none">
-      <ellipse cx="11" cy="7.5" rx="10.5" ry="6.5" stroke="white" strokeWidth="1.4" fill="rgba(255,255,255,0.08)"/>
-      <circle cx="11" cy="7.5" r="3.5" fill="white" fillOpacity="0.3"/>
-      <circle cx="11" cy="7.5" r="2" fill="white"/>
-      <circle cx="12" cy="6.8" r="0.7" fill="var(--bg)"/>
+  /* ─── Football SVG logo mark ─── */
+  const FootballMark=()=>(
+    <svg width="26" height="18" viewBox="0 0 26 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Ball body */}
+      <ellipse cx="13" cy="9" rx="11.5" ry="7" fill="rgba(255,255,255,0.12)" stroke="white" strokeWidth="1.3"/>
+      {/* Laces */}
+      <line x1="13" y1="3" x2="13" y2="15" stroke="white" strokeWidth="1.1" strokeDasharray="2.2 1.8"/>
+      <line x1="10.5" y1="5.5" x2="15.5" y2="5.5" stroke="white" strokeWidth="1.1"/>
+      <line x1="10.5" y1="9" x2="15.5" y2="9" stroke="white" strokeWidth="1.1"/>
+      <line x1="10.5" y1="12.5" x2="15.5" y2="12.5" stroke="white" strokeWidth="1.1"/>
     </svg>
   );
 
@@ -1265,7 +1257,7 @@ function App(){
     <>
       <header className="site-header">
         <div className="logo">
-          <div className="logo-mark"><JazzEye/></div>
+          <div className="logo-mark"><FootballMark/></div>
           <div>
             <div className="logo-text">Wreckineyez</div>
             <div className="logo-sub">Mock Draft</div>
@@ -1282,22 +1274,31 @@ function App(){
             ))}
           </div>
         )}
+        {/* Tutorial button — always visible in header */}
+        <button
+          onClick={()=>{setWalkthroughDone(false);}}
+          title="Start tutorial"
+          style={{marginLeft:"auto",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",
+            borderRadius:"50%",width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",
+            color:"var(--text2)",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,lineHeight:1}}>
+          ?
+        </button>
         {screen==="setup"&&canStart&&(
           <button className="hot" onClick={startDraft}
             data-wt="start-draft"
-            style={{marginLeft:12,padding:"6px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
+            style={{marginLeft:8,padding:"6px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
             Start Draft →
           </button>
         )}
         {screen==="draft"&&(
           <button onClick={()=>{clearTimeout(simRef.current);setScreen("setup");setPicks({});setCurrentPickIdx(0);setIsSimming(false)}}
-            style={{marginLeft:"auto",background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
+            style={{background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
               color:"var(--text2)",fontSize:12,padding:"5px 13px"}}>
             ← Setup
           </button>
         )}
         {screen==="results"&&(
-          <div style={{display:"flex",gap:8,marginLeft:"auto"}}>
+          <div style={{display:"flex",gap:8}}>
             <button onClick={()=>setScreen("draft")}
               style={{background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
                 color:"var(--text2)",fontSize:12,padding:"5px 13px"}}>
@@ -1364,22 +1365,18 @@ function App(){
                     ))}
                   </div>
                 </div>
-                <div style={{marginTop:10,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                <div style={{marginTop:10}}>
                   {players.length>0?(
-                    <div className="banner ok" style={{flex:1,minWidth:0}}>
+                    <div className="banner ok">
                       <span style={{fontSize:15}}>✓</span>
                       <span><strong>{players.length} players</strong> loaded</span>
                       {ranksMeta&&<span style={{fontSize:11,opacity:0.7,marginLeft:4}}>· {ranksMeta.name} · {ranksMeta.date}</span>}
                     </div>
                   ):(
-                    <div className="banner warn" style={{flex:1,minWidth:0}}>
+                    <div className="banner warn">
                       {fetchState==="loading"?"Loading rankings…":"Rankings not loaded — check your connection."}
                     </div>
                   )}
-                  <button className="ghost" onClick={()=>fetchLive(rankSource)} disabled={fetchState==="loading"}
-                    style={{fontSize:12,flexShrink:0}}>
-                    {fetchState==="loading"?"Loading…":"↺ Reload"}
-                  </button>
                 </div>
                 {fetchError&&(
                   <div className="banner warn" style={{marginTop:8}}>
