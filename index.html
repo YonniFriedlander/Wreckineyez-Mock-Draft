@@ -761,14 +761,7 @@ function TeamManager({teams,setTeams,myTeam,setMyTeam}){
         </span>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{fontSize:13,color:"var(--text2)",fontWeight:700}}>Your team:</span>
-          <select value={myTeam} onChange={e=>{
-              if(e.target.value==="Yonni"&&myTeam!=="Yonni"){
-                alert("Nice try, you wish you were me. Select a different team to draft as.");
-                return;
-              }
-              setMyTeam(e.target.value);
-            }}
-            data-wt="my-team"
+          <select value={myTeam} onChange={e=>setMyTeam(e.target.value)}
             style={{width:"auto",fontSize:14,height:34,padding:"0 10px",
               fontWeight:700,color:"var(--text)",background:"var(--s2)",
               border:"1px solid var(--border2)",borderRadius:"var(--r)"}}>
@@ -970,7 +963,8 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
 function App(){
   const saved=useMemo(load,[]);
   const[screen,setScreen]=useState("setup");
-  const[setupTab,setSetupTab]=useState("rankings");
+  const[setupTab,setSetupTab]=useState("settings");
+  const[rankSource,setRankSource]=useState(saved.rankSource||"ecr");
   const[teams,setTeams]=useState(saved.teams||DEF_TEAMS);
   const[myTeam,setMyTeam]=useState(saved.myTeam||DEF_MY);
   const[mode,setMode]=useState("mock");
@@ -1037,7 +1031,7 @@ function App(){
   }
 
   useEffect(()=>{
-    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes});
+    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes,rankSource});
   },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue]);
 
   const myIdx=teams.indexOf(myTeam);
@@ -1240,11 +1234,10 @@ function App(){
       :null
   ,[availAll,picks,order,currentPickIdx,myIdx,numRounds,rosterSlots,tendencies,variability,teams,mode,done,screen]);
 
-  // Auto-fetch rankings from proxy on startup if none are saved
+  // Auto-load rankings on startup if none saved
   useEffect(()=>{
     if(players.length===0){
-      // Small delay so the UI renders first
-      const t=setTimeout(()=>fetchLive("ecr"),800);
+      const t=setTimeout(()=>fetchLive(rankSource),800);
       return()=>clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1256,7 +1249,7 @@ function App(){
     }
   },[done,screen]);
 
-  const SETUP_TABS=[["rankings","Rankings"],["settings","Settings"],["board","Draft Board"]];
+  const SETUP_TABS=[["settings","Settings"],["board","Draft Board"]];
 
   /* ─── Jazz swoosh SVG for header ─── */
   const JazzEye=()=>(
@@ -1317,92 +1310,34 @@ function App(){
       {screen==="setup"&&(
         <div className="page" style={{overflowX:"visible"}}>
 
-          {/* ── Step 1: Rankings ── */}
-          {setupTab==="rankings"&&(
-            <>
-              <div className="step-head">
-                <h2>Rankings</h2>
-                <p>Rankings load automatically from a file hosted alongside this page. You can also load a CSV manually as a fallback.</p>
-              </div>
-
-              {/* ── Auto-load card ── */}
-              <div className="card">
-                <div className="card-title">Rankings file</div>
-                <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.6}}>
-                  This loads <code style={{background:"var(--s3)",padding:"1px 6px",borderRadius:4,fontSize:11}}>rankings.json</code> automatically
-                  when the app opens. The league commissioner updates this file periodically — you don't need to do anything.
-                </p>
-                <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
-                  <button className="primary" onClick={()=>fetchLive("ecr")} disabled={fetchState==="loading"}
-                    data-wt="fetch-ecr"
-                    style={{padding:"9px 20px",fontSize:14}}>
-                    {fetchState==="loading"?"Loading…":"⬇ Reload rankings"}
-                  </button>
-                </div>
-                {fetchError&&(
-                  <div className="banner warn" style={{marginTop:12,flexDirection:"column",alignItems:"flex-start",gap:6}}>
-                    <span>{fetchError}</span>
-                    <span style={{fontSize:11,opacity:0.8}}>If this keeps happening, use the CSV fallback below.</span>
-                  </div>
-                )}
-              </div>
-
-              {/* ── CSV fallback card ── */}
-              <div className="card">
-                <div className="card-title">Fallback — load CSV manually</div>
-                <p style={{fontSize:12,color:"var(--text3)",marginBottom:14,lineHeight:1.6}}>
-                  If the rankings file can't load, download a CSV from <a
-                    href="https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php"
-                    target="_blank" rel="noopener" style={{color:"var(--teal)"}}>FantasyPros ECR</a> or <a
-                    href="https://www.fantasypros.com/nfl/adp/overall.php"
-                    target="_blank" rel="noopener" style={{color:"var(--teal)"}}>ADP</a> and load it here.
-                </p>
-                <div className="frow">
-                  <label>Load CSV <span style={{fontWeight:400,color:"var(--text3)"}}>(ECR or ADP — auto-detected)</span></label>
-                  <input type="file" accept=".csv" onChange={handleFile}/>
-                </div>
-              </div>
-
-              {/* ── Status ── */}
-              {players.length>0?(
-                <div className="banner ok">
-                  <span style={{fontSize:16}}>✓</span>
-                  <span><strong>{players.length} players</strong> loaded</span>
-                  {ranksMeta&&(
-                    <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>
-                      · {ranksMeta.name} · {ranksMeta.date}
-                    </span>
-                  )}
-                  <span style={{marginLeft:"auto",fontSize:11,opacity:0.7}}>Saved</span>
-                </div>
-              ):(
-                <div className="banner warn">No rankings loaded yet — click Fetch ECR above, or load a CSV.</div>
-              )}
-
-              <div style={{display:"flex",justifyContent:"flex-end",marginTop:22}}>
-                <button className="primary" onClick={()=>setSetupTab("settings")}
-                  style={{padding:"10px 28px",fontSize:14}}>Next: Settings →</button>
-              </div>
-            </>
-          )}
-
-          {/* ── Step 2: Settings ── */}
+          {/* ── Settings ── */}
           {setupTab==="settings"&&(
             <>
               <div className="step-head">
                 <h2>Settings</h2>
-                <p>Set teams, draft mode, roster configuration, and simulation behaviour.</p>
+                <p>Configure your draft. Rankings load automatically — just pick your team and go.</p>
               </div>
 
+              {/* 1. Your team */}
               <div className="card">
-                <div className="card-title">Teams</div>
-                <TeamManager teams={teams} setTeams={setTeams} myTeam={myTeam} setMyTeam={setMyTeam}/>
-              </div>
-
-              <div className="card">
-                <div className="card-title">Draft</div>
+                <div className="card-title">Your team</div>
                 <div className="frow">
-                  <label>Mode</label>
+                  <label>Draft as</label>
+                  <select value={myTeam} onChange={e=>setMyTeam(e.target.value)}
+                    data-wt="my-team"
+                    style={{width:"auto",fontSize:14,height:34,padding:"0 10px",
+                      fontWeight:700,color:"var(--text)",background:"var(--s2)",
+                      border:"1px solid var(--border2)",borderRadius:"var(--r)"}}>
+                    {teams.map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* 2. Mode */}
+              <div className="card">
+                <div className="card-title">Mode</div>
+                <div className="frow">
+                  <label>Draft mode</label>
                   <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
                     {[["mock","Mock — CPU drafts for other teams"],["live","Live — enter every pick manually"]].map(([v,l])=>(
                       <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,fontWeight:500}}>
@@ -1413,12 +1348,53 @@ function App(){
                 </div>
               </div>
 
+              {/* 3. Ranking source */}
+              <div className="card" data-wt="rank-source">
+                <div className="card-title">Ranking source</div>
+                <div className="frow">
+                  <label>Use for draft order</label>
+                  <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                    {[["ecr","ECR — Expert Consensus Rankings"],["adp","ADP — Average Draft Position"]].map(([v,l])=>(
+                      <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,fontWeight:500}}>
+                        <input type="radio" checked={rankSource===v} onChange={()=>{
+                          setRankSource(v);
+                          fetchLive(v);
+                        }}/> {l}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div style={{marginTop:10,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+                  {players.length>0?(
+                    <div className="banner ok" style={{flex:1,minWidth:0}}>
+                      <span style={{fontSize:15}}>✓</span>
+                      <span><strong>{players.length} players</strong> loaded</span>
+                      {ranksMeta&&<span style={{fontSize:11,opacity:0.7,marginLeft:4}}>· {ranksMeta.name} · {ranksMeta.date}</span>}
+                    </div>
+                  ):(
+                    <div className="banner warn" style={{flex:1,minWidth:0}}>
+                      {fetchState==="loading"?"Loading rankings…":"Rankings not loaded — check your connection."}
+                    </div>
+                  )}
+                  <button className="ghost" onClick={()=>fetchLive(rankSource)} disabled={fetchState==="loading"}
+                    style={{fontSize:12,flexShrink:0}}>
+                    {fetchState==="loading"?"Loading…":"↺ Reload"}
+                  </button>
+                </div>
+                {fetchError&&(
+                  <div className="banner warn" style={{marginTop:8}}>
+                    <span>{fetchError}</span>
+                  </div>
+                )}
+              </div>
+
               {mode==="mock"&&(
                 <>
+                  {/* 4. Randomness */}
                   <div className="card">
-                    <div className="card-title">Simulation</div>
+                    <div className="card-title">Randomness</div>
                     <div className="frow">
-                      <label>Randomness — {variability.toFixed(1)}×
+                      <label>Chaos — {variability.toFixed(1)}×
                         <span style={{fontWeight:400,color:"var(--text3)",marginLeft:6}}>
                           {variability<0.5?"very predictable":variability<1.3?"realistic":variability<2?"chaotic":"wild"}
                         </span>
@@ -1428,6 +1404,50 @@ function App(){
                     </div>
                   </div>
 
+                  {/* 5. League tendencies */}
+                  <div className="card">
+                    <div className="card-title">League tendencies</div>
+                    <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.55}}>
+                      How aggressively the league reaches for each position. Right = more aggressive (drafted earlier). Centre = neutral.
+                    </p>
+                    {["QB","RB","WR","TE"].map(pos=>{
+                      const v=tendencies[pos]??1;
+                      const sliderVal=Math.round(50*Math.log(v)/Math.log(4)+50);
+                      const displaySlider=100-sliderVal;
+                      const lbl=v<=0.35?"Very aggressive":v<=0.6?"Aggressive":v<=0.85?"Slight lean":v<=1.18?"Neutral":v<=1.7?"Slight avoid":v<=2.5?"Avoid":"Strong avoid";
+                      const isAgg=v<0.85,isAvoid=v>1.18;
+                      return(
+                        <div key={pos} style={{display:"grid",gridTemplateColumns:"44px 1fr 160px",gap:12,alignItems:"center",marginBottom:12}}>
+                          <PB pos={pos} posRank={pos} style={{textAlign:"center",padding:"4px 0",display:"block",fontSize:12}}/>
+                          <input type="range" min={0} max={100} step={1} value={displaySlider}
+                            style={{maxWidth:300}}
+                            onChange={e=>{
+                              const ds=parseInt(e.target.value);
+                              const sv=100-ds;
+                              const newV=Math.pow(4,(sv-50)/50);
+                              setTendencies(p=>({...p,[pos]:Math.round(newV*100)/100}));
+                            }}/>
+                          <span style={{fontSize:12,fontWeight:700,
+                            color:isAgg?"var(--go)":isAvoid?"var(--warn)":"var(--text3)",textAlign:"right"}}>
+                            {lbl}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <button className="ghost" style={{fontSize:12,marginTop:4}}
+                      onClick={()=>setTendencies(DEF_TEND)}>Reset to neutral</button>
+                  </div>
+
+                  {/* 6. League order */}
+                  <div className="card">
+                    <div className="card-title">League order</div>
+                    <p style={{fontSize:12,color:"var(--text3)",marginBottom:12,lineHeight:1.55}}>
+                      Drag to reorder teams. The draft snakes from pick 1 at the top.
+                    </p>
+                    <TeamManager teams={teams} setTeams={setTeams} myTeam={myTeam} setMyTeam={setMyTeam}/>
+                  </div>
+
+                  {/* 7. Roster slots */}
                   <div className="card">
                     <div className="card-title">Roster slots</div>
                     <div className="g6" style={{maxWidth:480,marginBottom:10}}>
@@ -1444,64 +1464,10 @@ function App(){
                       {["QB","RB","WR","TE","FLEX"].reduce((s,k)=>s+(rosterSlots[k]||0),0)} starters + {rosterSlots.BN||0} bench
                     </span>
                   </div>
-
-                  <div className="card">
-                    <div className="card-title">League tendencies</div>
-                    <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.55}}>
-                      How aggressively the league reaches for each position. Right = more aggressive (drafted earlier). Centre = neutral.
-                    </p>
-                    {["QB","RB","WR","TE"].map(pos=>{
-                      const v=tendencies[pos]??1;
-                      // Internal value: <1 = aggressive (sim picks this pos earlier), >1 = avoids
-                      // Slider display: map to [-1, +1] where 0 = neutral (v=1), +1 = very aggressive, -1 = very avoid
-                      // Internal range: 0.25 (very aggressive) to 2.5 (strong avoid), neutral at 1.0
-                      // Use log scale so the slider is symmetric: displayVal = -log2(v), range [-1.32, +2]
-                      // Simpler: linear map: displayVal in [-1,1], v = 2 - displayVal (v=1 at displayVal=1, v=0.25 at displayVal=1.75...)
-                      // Cleanest: store v in [0.25, 4.0] with v=1 at slider midpoint
-                      // Slider range [0, 2], midpoint=1, displayVal=1 → v=1 (neutral)
-                      // displayVal=0 → v=4 (strong avoid), displayVal=2 → v=0.25 (very aggressive)
-                      // v = 4^(1 - displayVal) ... or simpler: v = 2^(1 - displayVal)*0.5
-                      // Actually simplest: slider range -1 to +1, midpoint 0
-                      // v = 10^(-displayVal * 0.6) so v=1 at 0, v=0.25 at +1, v=4 at -1
-                      // Let's just use: internal range 0.25–4, stored as v; slider = log2(1/v) * 0.5 inverted
-                      // 
-                      // SIMPLEST correct approach: slider 0–100, neutral=50
-                      // v = 0.25 at slider=100, v=4.0 at slider=0, v=1.0 at slider=50
-                      // v = 0.25 * (16)^(slider/100) = 0.25 * 16^(s/100)
-                      // At s=0: 0.25*1=0.25; s=50: 0.25*4=1.0; s=100: 0.25*16=4.0 ✓
-                      const sliderVal = Math.round(50 * Math.log(v) / Math.log(4) + 50);
-                      // inverted: right = aggressive = low v = high sliderVal
-                      const displaySlider = 100 - sliderVal; // flip so right=aggressive
-                      const lbl=v<=0.35?"Very aggressive":v<=0.6?"Aggressive":v<=0.85?"Slight lean":v<=1.18?"Neutral":v<=1.7?"Slight avoid":v<=2.5?"Avoid":"Strong avoid";
-                      const isAgg=v<0.85, isAvoid=v>1.18;
-                      return(
-                        <div key={pos} style={{display:"grid",gridTemplateColumns:"44px 1fr 160px",gap:12,alignItems:"center",marginBottom:12}}>
-                          <PB pos={pos} posRank={pos} style={{textAlign:"center",padding:"4px 0",display:"block",fontSize:12}}/>
-                          <input type="range" min={0} max={100} step={1}
-                            value={displaySlider}
-                            style={{maxWidth:300}}
-                            onChange={e=>{
-                              const ds=parseInt(e.target.value);
-                              const sv=100-ds; // undo flip
-                              // v = 4^((sv-50)/50)
-                              const newV=Math.pow(4,(sv-50)/50);
-                              setTendencies(p=>({...p,[pos]:Math.round(newV*100)/100}));
-                            }}/>
-                          <span style={{fontSize:12,fontWeight:700,
-                            color:isAgg?"var(--go)":isAvoid?"var(--warn)":"var(--text3)",textAlign:"right"}}>
-                            {lbl}
-                          </span>
-                        </div>
-                      );
-                    })}
-                    <button className="ghost" style={{fontSize:12,marginTop:4}}
-                      onClick={()=>setTendencies(DEF_TEND)}>Reset to neutral</button>
-                  </div>
                 </>
               )}
 
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
-                <button className="ghost" onClick={()=>setSetupTab("rankings")}>← Rankings</button>
+              <div style={{display:"flex",justifyContent:"flex-end",marginTop:6}}>
                 <button className="primary" onClick={()=>setSetupTab("board")}
                   style={{padding:"10px 28px",fontSize:14}}>Next: Draft Board →</button>
               </div>
@@ -1984,7 +1950,10 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
   const[focus,setFocus]=useState(null);
   const canvasRef=useRef(null);
   const[grade]=useState(()=>isFriends?fakeGrade():null);
-  const[standings]=useState(()=>isFriends?fakeStandings(teams,myTeam):null);
+  const[standings]=useState(()=>
+    projectStandings(teams,rosters,rosterSlots,picks,order,myTeam)
+  );
+  const[showMethodTip,setShowMethodTip]=useState(false);
 
   // Assign players to roster slots in draft order, bench = overflow
   function assignSlots(roster){
@@ -2133,11 +2102,41 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         </div>
       )}
 
-      {isFriends&&standings&&(
+            {standings&&standings.length>0&&(
         <div style={{background:"var(--s1)",border:"1px solid var(--border)",
           borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20}}>
-          <div style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",
-            color:"var(--text3)",marginBottom:14}}>Projected Season Standings</div>
+          {/* Header + info tooltip */}
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
+            <div style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",
+              color:"var(--text3)"}}>Projected Season Standings</div>
+            {/* Info icon with tooltip */}
+            <div style={{position:"relative",display:"inline-flex"}}>
+              <span
+                onMouseEnter={()=>setShowMethodTip(true)}
+                onMouseLeave={()=>setShowMethodTip(false)}
+                style={{fontSize:11,color:"var(--text3)",cursor:"default",
+                  width:16,height:16,borderRadius:"50%",border:"1px solid var(--border2)",
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  fontWeight:700,lineHeight:1,userSelect:"none"}}>
+                ?
+              </span>
+              {showMethodTip&&(
+                <div style={{position:"absolute",bottom:"calc(100% + 6px)",left:"50%",
+                  transform:"translateX(-50%)",width:260,
+                  background:"var(--s2)",border:"1px solid var(--border2)",
+                  borderRadius:"var(--r)",padding:"10px 12px",
+                  fontSize:11,color:"var(--text2)",lineHeight:1.6,
+                  zIndex:50,boxShadow:"0 8px 24px rgba(0,0,0,0.5)",
+                  pointerEvents:"none",whiteSpace:"normal"}}>
+                  <strong style={{color:"var(--text)",display:"block",marginBottom:4}}>How projections work</strong>
+                  Each team's starters are scored using a fitted ADP→expected points model
+                  (exponential decay for RB/WR/TE, linear for QB) calibrated on
+                  154 player-seasons from 2021–2024. Each player's pre-season ECR rank
+                  is used as the ADP input. Bench players are excluded. This is an estimate — individual variance is high.
+                </div>
+              )}
+            </div>
+          </div>
           <div style={{display:"flex",flexDirection:"column",gap:4}}>
             {standings.map((row,i)=>(
               <div key={row.team} style={{display:"flex",alignItems:"center",gap:10,
@@ -2149,19 +2148,131 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
                   color:row.isYonni?"var(--teal)":row.isYou?"var(--mag)":"var(--text)"}}>
                   {row.team}
                   {row.isYonni&&<span style={{fontSize:10,marginLeft:6,color:"var(--teal)"}}>🏆 The Champ</span>}
-                  {row.isYou&&<span style={{fontSize:10,marginLeft:6,color:"var(--mag)"}}>← you</span>}
+                  {row.isYou&&isFriends&&<span style={{fontSize:10,marginLeft:6,color:"var(--mag)"}}>← you</span>}
                 </span>
                 <span style={{fontSize:12,fontWeight:600,color:"var(--text2)",fontVariantNumeric:"tabular-nums"}}>
-                  {row.w}–{row.l}
+                  {row.projPts.toLocaleString()} pts
                 </span>
               </div>
             ))}
           </div>
           <div style={{fontSize:11,color:"var(--text3)",marginTop:10,fontStyle:"italic"}}>
-            * Projections generated by advanced analytics. Results may vary. Okay, they definitely will for you.
+            {isFriends
+              ? "* Model-based projections. Results may vary. Okay, they definitely will for you."
+              : "* Expected starter points based on ADP model. Hover ? for methodology."}
           </div>
         </div>
       )}
+
+      {/* ── My team: points by position ── */}
+      {(()=>{
+        const {starters,bench}=assignSlots(rosters[myTeam]||[]);
+        if(!starters.length&&!bench.length)return null;
+
+        const POS_COLORS={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)"};
+
+        function PlayerRow({p,isBench}){
+          const proj=isBench?null:Math.round(adpExpectedPts(p.pos,p.rank||p.pickNum||100));
+          const col=POS_COLORS[p.slotLabel]||"var(--text3)";
+          return(
+            <div style={{display:"flex",alignItems:"center",gap:8,padding:"5px 10px",
+              borderRadius:"var(--r)",background:"var(--s2)",
+              borderLeft:`3px solid ${isBench?"var(--border2)":col}`}}>
+              <span style={{fontSize:9,fontWeight:800,textTransform:"uppercase",
+                letterSpacing:"0.06em",width:32,flexShrink:0,
+                color:isBench?"var(--text3)":col}}>{p.slotLabel}</span>
+              <span style={{flex:1,fontSize:12,fontWeight:600,color:"var(--text)",
+                overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+              <span style={{fontSize:10,color:"var(--text3)",flexShrink:0,marginRight:4}}>R{p.round}</span>
+              {proj!==null?(
+                <span style={{fontSize:12,fontWeight:700,color:col,
+                  minWidth:38,textAlign:"right",flexShrink:0}}>
+                  {proj}
+                </span>
+              ):(
+                <span style={{fontSize:11,color:"var(--text3)",minWidth:38,textAlign:"right",flexShrink:0}}>—</span>
+              )}
+            </div>
+          );
+        }
+
+        // Group starters by position type
+        const posOrder=["QB","RB","WR","TE","FLEX"];
+        const grouped={};
+        starters.forEach(p=>{
+          const k=p.slotLabel;
+          if(!grouped[k])grouped[k]=[];
+          grouped[k].push(p);
+        });
+
+        const totalStarter=starters.reduce((s,p)=>{
+          return s+adpExpectedPts(p.pos,p.rank||p.pickNum||100);
+        },0);
+
+        return(
+          <div style={{background:"var(--s1)",border:"1px solid var(--mag-border)",
+            borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20}}>
+            <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",
+              marginBottom:14,flexWrap:"wrap",gap:8}}>
+              <div style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",
+                color:"var(--mag)"}}>
+                {myTeam} — Projected Points by Position
+              </div>
+              <div style={{fontSize:13,fontWeight:700,color:"var(--teal)"}}>
+                {Math.round(totalStarter).toLocaleString()} pts total
+                <span style={{fontSize:10,color:"var(--text3)",fontWeight:400,marginLeft:6}}>starters</span>
+              </div>
+            </div>
+
+            {/* Starters grouped by position */}
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
+              {posOrder.map(slot=>{
+                if(!grouped[slot]||!grouped[slot].length)return null;
+                const players=grouped[slot];
+                const slotTotal=Math.round(players.reduce((s,p)=>{
+                  return s+adpExpectedPts(p.pos,p.rank||p.pickNum||100);
+                },0));
+                const col=POS_COLORS[slot]||"var(--text3)";
+                return(
+                  <div key={slot}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                      marginBottom:5}}>
+                      <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",
+                        letterSpacing:"0.1em",color:col}}>{slot}</span>
+                      <span style={{fontSize:11,fontWeight:700,color:col}}>
+                        {slotTotal} pts
+                      </span>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                      {players.map(p=><PlayerRow key={p.pickNum} p={p} isBench={false}/>)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Bench */}
+            {bench.length>0&&(
+              <>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <div style={{flex:1,height:1,background:"var(--border2)"}}/>
+                  <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",
+                    letterSpacing:"0.1em",color:"var(--text3)"}}>Bench</span>
+                  <div style={{flex:1,height:1,background:"var(--border2)"}}/>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:3}}>
+                  {bench.map(p=><PlayerRow key={p.pickNum} p={p} isBench={true}/>)}
+                </div>
+              </>
+            )}
+
+            <div style={{fontSize:11,color:"var(--text3)",marginTop:12,fontStyle:"italic"}}>
+              Projected pts per starter based on ADP model, using each player's pre-season ECR rank as input.
+            </div>
+          </div>
+        );
+      })()}
+
 
       {/* Focus: single team expanded view */}
       {focus&&(()=>{
@@ -2332,16 +2443,44 @@ const FAKE_GRADES=["D","D-","F","F-"];
 function snarkMessage(){return SNARKY[Math.floor(Math.random()*SNARKY.length)];}
 function snarkTitle(){return SNARK_TITLES[Math.floor(Math.random()*SNARK_TITLES.length)];}
 function fakeGrade(){return FAKE_GRADES[Math.floor(Math.random()*FAKE_GRADES.length)];}
-function fakeStandings(teams,myTeam){
-  const others=teams.filter(t=>t!==myTeam&&t!=="Yonni");
-  for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
-  const ordered=["Yonni",...others,myTeam];
-  const n=ordered.length;
-  return ordered.map((t,i)=>{
-    const base=Math.round(13-i*(13/(n-1)));
-    const w=Math.min(13,Math.max(0,base+Math.round((Math.random()-0.5)*1.5)));
-    return{team:t,w,l:14-w,isYou:t===myTeam,isYonni:t==="Yonni"};
+// ADP → expected 0 PPR standard points model
+// Fitted to 154 player-seasons 2021-2024 (FFC non-PPR 12-team ADP + PFR standard pts)
+// QB: linear  pts = 429.3 - 1.82*ecr   (R²=0.71)
+// RB: exp     pts = 365.9*e^(-0.00524*ecr) - 65.0  (R²=0.91)
+// WR: exp     pts = 259.3*e^(-0.01197*ecr) + 47.7   (R²=0.95)
+// TE: exp     pts = 227.2*e^(-0.01455*ecr) + 15.9   (R²=0.98)
+function adpExpectedPts(pos, ecr){
+  if(!ecr||ecr<=0)return 0;
+  switch(pos){
+    case"QB": return Math.max(0, 429.323 - 1.8205*ecr);
+    case"RB": return Math.max(0, 365.866*Math.exp(-0.005238*ecr) - 65.023);
+    case"WR": return Math.max(0, 259.322*Math.exp(-0.011966*ecr) + 47.734);
+    case"TE": return Math.max(0, 227.156*Math.exp(-0.014546*ecr) + 15.951);
+    default:  return 0;
+  }
+}
+
+function projectStandings(teams, rosters, rosterSlots, picks, order, myTeam){
+  const scored=teams.map(team=>{
+    const roster=rosters[team]||[];
+    const byPick=[...roster].sort((a,b)=>a.pickNum-b.pickNum);
+    const slots=[];
+    const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0};
+    const flexElig=new Set(["RB","WR","TE"]);
+    for(const p of byPick){
+      const pos=p.pos;
+      const slotMax=rosterSlots[pos]||0;
+      if(counts[pos]<slotMax){counts[pos]++;slots.push(p);}
+      else if(flexElig.has(pos)&&counts.FLEX<(rosterSlots.FLEX||0)){counts.FLEX++;slots.push(p);}
+    }
+    const projPts=slots.reduce((sum,p)=>{
+      const ecr=p.rank||p.pickNum||100;
+      return sum+adpExpectedPts(p.pos,ecr);
+    },0);
+    return{team,projPts:Math.round(projPts),isYou:team===myTeam,isYonni:team==="Yonni"};
   });
+  scored.sort((a,b)=>b.projPts-a.projPts);
+  return scored;
 }
 
 const WT_STEPS=[
@@ -2352,33 +2491,33 @@ const WT_STEPS=[
     hl:[],
   },
   {
-    tab:"rankings", target:"fetch-ecr",
-    title:"Step 1 — Rankings",
-    body:"Rankings load automatically from a shared file when the app opens. Click Reload rankings any time to refresh, or load a CSV manually as a backup.",
-    hl:["Reload rankings"],
-  },
-  {
     tab:"settings", target:"my-team",
-    title:"Step 2 — Pick Your Team",
-    body:"Select your team from the Your team dropdown — that's who you'll draft for. Every other team will be drafted by the CPU in mock mode.",
+    title:"Step 1 — Pick Your Team",
+    body:"Select your team from the dropdown — that's who you'll draft for. Every other team will be drafted by the CPU in mock mode.",
     hl:["Your team"],
   },
   {
+    tab:"settings", target:"rank-source",
+    title:"Step 2 — Ranking Source",
+    body:"Choose ECR (Expert Consensus Rankings) or ADP (Average Draft Position) as your player ranking source. Rankings load automatically when the app opens — switching here reloads them immediately.",
+    hl:["ECR","ADP"],
+  },
+  {
     tab:"settings", target:null,
-    title:"Step 3 — Other Settings",
-    body:"Below your team selector you can set Draft mode (mock vs live), adjust roster slots (already set for your league), and tune League tendencies — how aggressively the CPU reaches for each position.",
-    hl:["Draft mode","roster slots","League tendencies"],
+    title:"Step 3 — Simulation Settings",
+    body:"Set Draft mode (mock vs live), adjust Randomness to control how unpredictably the CPU drafts, and tune League tendencies to match how your league values each position. League order and Roster slots are below — already configured for Wreckineyez.",
+    hl:["Draft mode","Randomness","League tendencies"],
   },
   {
     tab:"board", target:null,
     title:"Step 4 — Keepers & Trades",
-    body:"The Draft Board shows the full pick order. Click any cell to set a keeper (green) or reassign a traded pick (orange) — the label shows who receives it. These settings, along with all your notes, save automatically between sessions.",
+    body:"The Draft Board shows the full pick order. Click any cell to set a keeper (green) or reassign a traded pick (orange). These settings and all your notes save automatically between sessions.",
     hl:["keeper","traded"],
   },
   {
     tab:null, target:"start-draft",
     title:"Step 5 — Start the Draft",
-    body:"Once rankings are loaded, the Start Draft button appears in the top-right corner of the header. Click it when you're ready to begin.",
+    body:"Once rankings are loaded, the Start Draft button appears in the top-right corner. Click it when you're ready to begin.",
     hl:["Start Draft"],
   },
   {
@@ -2394,7 +2533,7 @@ const WT_STEPS=[
   {
     tab:null, target:null,
     title:"Step 7 — Queue & Notes",
-    body:"Star any player (☆) to add them to your Queue — a personal watch list you can draft from directly. Use the note field on each row for scouting notes, and Draft Notes (above the queue) for general strategy. Everything saves automatically.",
+    body:"Star any player (☆) to add them to your Queue — a personal watch list you can draft from directly. Use the note field on each row for scouting notes, and Draft Notes for general strategy. Everything saves automatically.",
     hl:["Queue","Draft Notes"],
   },
   {
