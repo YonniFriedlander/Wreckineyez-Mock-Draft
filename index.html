@@ -1,0 +1,3193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wreckineyez — Mock Draft</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Jazz cup palette */
+  --bg:#0B0B14;
+  --s1:#12121E;   /* card surface */
+  --s2:#1A1A2A;   /* elevated surface */
+  --s3:#222236;   /* hover / active surface */
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.13);
+  --text:#F0EDE8;
+  --text2:#9896A8;
+  --text3:#5A5868;
+  /* Jazz accents */
+  --teal:#00C8C0;
+  --teal2:#00A8A0;
+  --teal-dim:rgba(0,200,192,0.12);
+  --teal-border:rgba(0,200,192,0.3);
+  --mag:#E8366E;
+  --mag2:#C42A5A;
+  --mag-dim:rgba(232,54,110,0.12);
+  --mag-border:rgba(232,54,110,0.3);
+  --purp:#8B5CF6;
+  --purp-dim:rgba(139,92,246,0.12);
+  --purp-border:rgba(139,92,246,0.3);
+  /* status (remapped) */
+  --go:#00C8C0;     --go-bg:rgba(0,200,192,0.1);    --go-border:rgba(0,200,192,0.3);
+  --warn:#F59E0B;   --warn-bg:rgba(245,158,11,0.1); --warn-border:rgba(245,158,11,0.3);
+  --info:#8B5CF6;   --info-bg:rgba(139,92,246,0.1); --info-border:rgba(139,92,246,0.3);
+  --danger:#E8366E;
+  --r:7px;--rl:11px;--rxl:16px;
+}
+html{font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;color:var(--text);background:var(--bg)}
+body{min-height:100vh}
+
+/* ── header ── */
+.site-header{
+  position:sticky;top:0;z-index:30;height:56px;
+  display:flex;align-items:center;gap:14px;padding:0 22px;
+  background:var(--s1);border-bottom:1px solid var(--border2);
+  overflow:hidden;
+}
+/* Jazz swoosh shapes rendered as a background SVG */
+.site-header::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 180px 60px at -20px 80px, rgba(0,200,192,0.18) 0%, transparent 70%),
+    radial-gradient(ellipse 120px 40px at 110% 20px, rgba(232,54,110,0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 200px 50px at 60% 120%, rgba(139,92,246,0.10) 0%, transparent 70%);
+}
+.site-header>*{position:relative;z-index:1}
+
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
+.logo-mark{
+  width:34px;height:34px;border-radius:7px;
+  background:linear-gradient(135deg,var(--purp) 0%,var(--mag) 55%,var(--teal) 100%);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 0 14px rgba(232,54,110,0.4);
+}
+.logo-text{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:21px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text);line-height:1}
+.logo-sub{font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);line-height:1}
+
+.header-steps{display:flex;gap:3px;margin-left:auto}
+.hstep{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:700;
+  color:var(--text3);border:1px solid transparent;cursor:pointer;
+  transition:all 0.15s;letter-spacing:0.02em}
+.hstep.on{background:var(--teal);color:#0B0B14;border-color:var(--teal)}
+.hstep.done{color:var(--text2)}
+.hstep:hover:not(.on){background:var(--s3);color:var(--text)}
+
+/* ── page ── */
+.page{max-width:1280px;margin:0 auto;padding:28px 36px 70px}
+/* Draft and results pages share the same outer margin */
+.draft-page{max-width:1280px;margin:0 auto;padding:20px 36px 70px}
+.results-page{max-width:1280px;margin:0 auto;padding:28px 36px 70px}
+.draft-layout{display:flex;gap:20px;align-items:flex-start}
+.draft-main{flex:1;min-width:0}
+.draft-sidebar{
+  width:220px;flex-shrink:0;
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);
+  padding:14px 14px;position:sticky;top:74px;max-height:calc(100vh - 90px);overflow-y:auto;
+}
+.sidebar-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;
+  color:var(--text3);margin-bottom:12px}
+.sb-team{padding:7px 9px;border-radius:var(--r);margin-bottom:4px;border:1px solid transparent;
+  transition:background 0.12s}
+.sb-team:hover{background:var(--s2)}
+.sb-mine{background:var(--mag-dim);border-color:var(--mag-border) !important}
+.sb-my-team-panel{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border2)}
+.sb-my-player{display:flex;align-items:center;gap:6px;padding:3px 2px;font-size:11px}
+.sb-slot-label{font-size:9px;font-weight:800;text-transform:uppercase;width:32px;
+  flex-shrink:0;color:var(--text3);letter-spacing:0.05em}
+.sb-slot-label.filled{color:var(--text2)}
+.sb-player-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-weight:600;color:var(--text)}
+.sb-player-round{font-size:10px;color:var(--text3);flex-shrink:0}
+.sb-name{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;
+  justify-content:space-between;margin-bottom:5px}
+.sb-count{font-size:10px;font-weight:600;color:var(--text3);background:var(--s3);
+  border-radius:8px;padding:1px 6px}
+.sb-pos-row{display:flex;gap:4px;flex-wrap:wrap}
+.step-head{margin-bottom:26px}
+.step-head h2{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;
+  letter-spacing:0.04em;text-transform:uppercase;color:var(--text);line-height:1}
+.step-head p{color:var(--text2);font-size:13px;margin-top:6px;line-height:1.55}
+
+/* ── cards ── */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:22px 24px;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:16px}
+
+/* ── form elements ── */
+input,select{
+  font-family:'Inter',sans-serif;font-size:13px;color:var(--text);
+  border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--s2);outline:none;padding:8px 11px;height:36px;width:100%;
+  transition:border-color 0.15s,box-shadow 0.15s;
+}
+input::placeholder{color:var(--text3)}
+input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-dim)}
+select option{background:var(--s2);color:var(--text)}
+input[type=range]{
+  height:auto;padding:0;border:none;background:none;box-shadow:none;cursor:pointer;
+  accent-color:var(--teal);
+}
+input[type=radio],input[type=checkbox]{width:auto;height:auto;accent-color:var(--teal)}
+input[type=file]{height:auto;padding:6px 0;border:none;background:none;font-size:12px;width:auto;color:var(--text2)}
+.frow{display:flex;flex-direction:column;gap:5px}
+.frow label{font-size:12px;font-weight:600;color:var(--text2)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+
+/* ── buttons ── */
+button{
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  color:var(--text);border:1px solid var(--border2);border-radius:var(--r);
+  background:var(--s2);padding:7px 14px;cursor:pointer;
+  transition:background 0.12s,border-color 0.12s,transform 0.1s;line-height:1.4;white-space:nowrap;
+}
+button:hover{background:var(--s3);border-color:var(--border2)}
+button:active{transform:scale(0.97)}
+button.primary{background:var(--teal);color:#0B0B14;border-color:var(--teal);font-weight:800}
+button.primary:hover{background:var(--teal2);border-color:var(--teal2)}
+button.hot{background:var(--mag);color:#fff;border-color:var(--mag);font-weight:800}
+button.hot:hover{background:var(--mag2);border-color:var(--mag2)}
+button.ghost{border:none;background:transparent;padding:4px 8px;color:var(--text3)}
+button.ghost:hover{background:var(--s3);color:var(--text)}
+button.danger-ghost{border:none;background:transparent;padding:4px 8px;color:var(--danger)}
+button.danger-ghost:hover{background:var(--mag-dim)}
+button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
+
+/* ── banners ── */
+.banner{padding:11px 15px;border-radius:var(--r);font-size:13px;display:flex;align-items:center;gap:9px;border:1px solid}
+.banner.ok{background:var(--go-bg);color:var(--go);border-color:var(--go-border)}
+.banner.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn-border)}
+.banner.info{background:var(--info-bg);color:var(--info);border-color:var(--info-border)}
+.banner.hot{background:var(--mag-dim);color:var(--mag);border-color:var(--mag-border)}
+
+/* ── pos badges ── */
+.pb{display:inline-block;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:0.04em;line-height:1.5}
+.QB{background:rgba(245,158,11,0.15);color:#FACC15}
+.RB{background:rgba(0,200,192,0.15);color:#00C8C0}
+.WR{background:rgba(139,92,246,0.18);color:#A78BFA}
+.TE{background:rgba(232,54,110,0.15);color:#F472B6}
+.K {background:rgba(255,255,255,0.07);color:#9896A8}
+.DST{background:rgba(255,255,255,0.07);color:#9896A8}
+
+/* ── tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;gap:2px}
+.tab{border:none;border-bottom:2px solid transparent;border-radius:0;padding:9px 18px;
+  font-size:13px;font-weight:700;background:none;color:var(--text3);margin-bottom:-1px;cursor:pointer;letter-spacing:0.02em}
+.tab.on{color:var(--teal);border-bottom-color:var(--teal)}
+.tab:hover{background:var(--s2);color:var(--text)}
+
+/* ── autocomplete ── */
+.ac{position:relative}
+.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;
+  background:var(--s2);border:1px solid var(--border2);border-radius:var(--r);
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:210px;overflow-y:auto}
+.ac-item{padding:8px 13px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:var(--s3)}
+
+/* ── team list ── */
+.team-list{display:flex;flex-direction:column;gap:5px}
+.team-item{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);user-select:none;
+  transition:border-color 0.15s,background 0.15s}
+.team-item.ghost-over{border-color:var(--teal);background:var(--teal-dim)}
+.team-num{font-size:11px;font-weight:700;color:var(--text3);width:18px;text-align:right;flex-shrink:0}
+.team-drag{cursor:grab;color:var(--text3);font-size:16px;flex-shrink:0;padding:0 2px;line-height:1}
+.team-drag:active{cursor:grabbing}
+.team-edit{flex:1;font-size:13px;font-weight:600;border:none;background:transparent;
+  outline:none;color:var(--text);padding:0}
+.team-edit:focus{color:var(--teal)}
+.team-you{background:var(--mag);color:#fff;border-radius:4px;font-size:10px;font-weight:800;
+  padding:2px 7px;letter-spacing:0.05em;text-transform:uppercase}
+.add-team-row{display:flex;gap:8px;margin-top:8px}
+
+/* ── filter pills ── */
+.pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;
+  border:1px solid var(--border2);background:var(--s2);cursor:pointer;color:var(--text2);
+  transition:all 0.12s;letter-spacing:0.02em}
+.pill.on{background:var(--teal);color:#0B0B14;border-color:var(--teal)}
+
+/* ── boards ── */
+.board-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl)}
+/* In setup, let the board be full width without internal scroll */
+.setup-board-wrap{overflow-x:visible;border:1px solid var(--border);border-radius:var(--rl)}
+.btable{border-collapse:collapse;font-size:11px;min-width:max-content;width:100%}
+.btable th,.btable td{
+  padding:0;white-space:nowrap;text-align:center;
+  border-bottom:1px solid var(--border);border-right:1px solid var(--border);
+  height:46px;vertical-align:middle}
+.btable th{height:32px;padding:0 8px}
+.btable th:last-child,.btable td:last-child{border-right:none}
+.btable thead th{
+  background:var(--bg);font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.07em;color:var(--text3);border-bottom:1px solid var(--border2);border-right:1px solid var(--border)}
+/* your column header — magenta */
+.btable thead th.mine-h{background:var(--mag-dim);color:var(--mag);border-bottom-color:var(--mag-border)}
+.rh{
+  text-align:left;font-size:10px;font-weight:700;color:var(--text3);
+  position:sticky;left:0;background:var(--bg);z-index:2;
+  width:28px;padding:0 8px;border-right:1px solid var(--border2) !important}
+/* even rows slightly lighter */
+.btable tbody tr:nth-child(even) td:not(.rh){background:rgba(255,255,255,0.015)}
+.btable td.mine-col{background:rgba(232,54,110,0.05)}
+.btable td.cur{background:rgba(245,158,11,0.12);outline:2px solid var(--warn);outline-offset:-2px}
+.btable td.keeper{background:rgba(0,200,192,0.08)}
+.btable td.traded{background:rgba(245,158,11,0.08)}
+.btable td.clickable{cursor:pointer}
+.btable td.clickable:hover{background:var(--s3)}
+.bcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  min-width:84px;padding:4px 6px;height:100%}
+.bcell .bn{font-size:10px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bcell .bm{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
+.bcell .bnum{font-size:10px;color:var(--text3);font-weight:400}
+
+/* ── player table ── */
+.ptable-wrap{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable thead{background:var(--bg)}
+.ptable th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:0.07em;color:var(--text3);border-bottom:1px solid var(--border2)}
+.ptable td{padding:9px 12px;border-bottom:1px solid var(--border);background:var(--s1)}
+.ptable tr:last-child td{border-bottom:none}
+.ptable tr.pr:hover td{background:var(--s2);cursor:pointer}
+.ptable tr.sel td{background:var(--mag-dim)}
+.ptable tr.sel td:first-child{border-left:3px solid var(--mag)}
+
+/* ── clock banner ── */
+.clock{
+  border-radius:var(--rl);padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  margin-bottom:22px;border:1px solid;position:relative;overflow:hidden;
+}
+.clock::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 300px 80px at -10% 100%, rgba(0,200,192,0.08) 0%,transparent 70%),
+    radial-gradient(ellipse 200px 60px at 110% 0%, rgba(139,92,246,0.08) 0%,transparent 70%);
+}
+.clock>*{position:relative;z-index:1}
+.clock.mine{
+  background:var(--s1);border-color:var(--mag-border);
+  box-shadow:0 0 40px rgba(232,54,110,0.12);
+}
+.clock.mine::before{
+  background:
+    radial-gradient(ellipse 320px 100px at -5% 120%, rgba(232,54,110,0.12) 0%,transparent 70%),
+    radial-gradient(ellipse 200px 70px at 110% -20%, rgba(139,92,246,0.1) 0%,transparent 70%);
+}
+.clock.theirs{background:var(--s1);border-color:var(--border2)}
+.clock-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px}
+.clock-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;
+  line-height:1;text-transform:uppercase;letter-spacing:0.03em}
+.clock-sub{font-size:12px;margin-top:6px;color:var(--text3);font-weight:500}
+
+/* ── progress ── */
+.pbar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;flex:1}
+.pfill{height:100%;background:linear-gradient(90deg,var(--purp),var(--teal));border-radius:2px;transition:width 0.4s}
+
+/* ── topbar ── */
+.topbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+
+/* ── modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:var(--rxl);
+  padding:26px;width:100%;max-width:430px;box-shadow:0 24px 80px rgba(0,0,0,0.7)}
+.modal-title{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;
+  text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;color:var(--text)}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.modal-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.modal-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.modal-sec-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px}
+
+/* ── chips ── */
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
+  border-radius:20px;border:1px solid var(--border2);background:var(--s2);font-size:12px;font-weight:600}
+.chip-x{border:none;background:none;padding:0;width:16px;height:16px;font-size:16px;
+  line-height:1;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chip-x:hover{color:var(--danger);transform:none;background:none}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@keyframes fadeSlideIn{
+  from{opacity:0;transform:translateY(-6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── roster counts ── */
+.rcounts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+
+/* ── needs summary (clock banner) ── */
+.needs-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.need-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;
+  font-size:11px;font-weight:700;background:var(--s3);border:1px solid var(--border2)}
+.need-chip.filled{border-color:var(--go-border);background:var(--go-bg)}
+
+/* ── player notes ── */
+.note-cell{padding:4px 8px !important}
+.note-input{font-size:11px;padding:3px 7px;height:26px;border-radius:4px;
+  background:var(--s3);border:1px solid transparent;color:var(--text2);width:130px}
+.note-input:focus{border-color:var(--purp);color:var(--text);background:var(--s2)}
+.note-input::placeholder{color:var(--text3);font-style:italic}
+
+/* ── queue panel ── */
+.queue-panel{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);
+  padding:14px 16px;margin-bottom:18px}
+.queue-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;cursor:pointer;user-select:none}
+.queue-list{margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.q-item{display:flex;align-items:center;gap:8px;padding:6px 10px;
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  transition:border-color 0.15s,background 0.15s}
+.q-item:hover{border-color:var(--border2)}
+.q-item.ghost-over{border-color:var(--teal);background:var(--teal-dim)}
+.q-item.drafted{opacity:0.35}
+.q-num{font-size:10px;font-weight:800;color:var(--text3);width:16px;text-align:right;flex-shrink:0}
+.q-drag{cursor:grab;color:var(--text3);font-size:14px;flex-shrink:0;line-height:1}
+.q-draft-btn{font-size:11px;padding:3px 10px;margin-left:auto;flex-shrink:0}
+
+/* ── mid-draft trade modal ── */
+.trade-modal{background:var(--s1);border:1px solid var(--border2);border-radius:var(--rxl);
+  padding:26px;width:100%;max-width:400px;box-shadow:0 24px 80px rgba(0,0,0,0.7)}
+
+/* ── walkthrough ── */
+.wt-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.wt-box{background:var(--s1);border:1px solid var(--border2);border-radius:var(--rxl);
+  padding:32px 36px;width:100%;max-width:520px;box-shadow:0 32px 96px rgba(0,0,0,0.7)}
+.wt-step-dots{display:flex;gap:6px;margin-bottom:22px}
+.wt-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);transition:background 0.2s}
+.wt-dot.on{background:var(--teal)}
+.wt-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:26px;
+  text-transform:uppercase;letter-spacing:0.04em;color:var(--text);margin-bottom:10px}
+.wt-body{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:24px}
+.wt-body strong{color:var(--text)}
+.wt-body code{background:var(--s3);padding:1px 6px;border-radius:3px;
+  font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--teal)}
+.wt-footer{display:flex;align-items:center;justify-content:space-between}
+
+/* ── results page ── */
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.res-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+.res-card:hover{border-color:var(--border2);box-shadow:0 4px 20px rgba(0,0,0,0.3)}
+.res-card.mine{border-color:var(--mag-border);background:var(--mag-dim)}
+.res-card-name{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:18px;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px}
+.res-pos-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.res-players{font-size:11px;color:var(--text2);line-height:1.7}
+.res-player-row{display:flex;align-items:center;gap:6px}
+
+/* ── mobile player cards (Available list, <768px) ──
+   Desktop continues to use .ptable; mobile renders this card list instead
+   via the AvailPanel component's isMobile branch. Styled independently
+   so changes here cannot affect the desktop table above. */
+.pcard-list{display:flex;flex-direction:column;gap:8px}
+.pcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);
+  padding:12px 14px;cursor:pointer;transition:border-color 0.15s,background 0.15s}
+.pcard:active{background:var(--s2)}
+.pcard.sel{border-color:var(--mag-border);background:var(--mag-dim)}
+.pcard-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pcard-rank{font-size:11px;color:var(--text3);font-weight:700;flex-shrink:0;width:24px}
+.pcard-name{font-size:15px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard-meta{font-size:11px;color:var(--text3);display:flex;gap:6px;align-items:center;flex-shrink:0}
+.pcard-avail{display:flex;align-items:center;gap:8px;margin:8px 0}
+.pcard-avail-bar{flex:1;height:7px;background:var(--s3);border-radius:4px;overflow:hidden}
+.pcard-avail-label{font-size:11px;font-weight:800;min-width:62px;text-align:right}
+.pcard-actions{display:flex;align-items:center;gap:8px;margin-top:8px}
+.pcard-note-btn{flex:1;text-align:left;font-size:12px;padding:7px 10px;border-radius:var(--r);
+  background:var(--s2);border:1px solid var(--border2);color:var(--text3)}
+.pcard-note-btn.has-note{color:var(--text2);border-color:var(--purp)}
+.pcard-queue-btn{font-size:18px;padding:6px 10px;border-radius:var(--r);
+  background:var(--s2);border:1px solid var(--border2);color:var(--text3);flex-shrink:0}
+.pcard-queue-btn.in-queue{color:var(--teal);background:var(--teal-dim);border-color:var(--teal-border)}
+.pcard-pick-btn{flex-shrink:0}
+
+/* mobile note editor sheet — full-width bottom sheet instead of floating textarea */
+.note-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:210;
+  display:flex;align-items:flex-end}
+.note-sheet{width:100%;background:var(--s1);border-top:1px solid var(--border2);
+  border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));
+  box-shadow:0 -8px 32px rgba(0,0,0,0.6)}
+.note-sheet textarea{width:100%;min-height:110px;font-size:14px;padding:10px 12px;
+  border-radius:8px;background:var(--s2);border:1px solid var(--border2);
+  color:var(--text);resize:vertical;font-family:inherit;line-height:1.6}
+
+/* ── general responsive layout, <768px ──
+   Desktop rules above are unaffected; these only apply under the breakpoint. */
+@media (max-width:768px){
+  .page,.draft-page,.results-page{padding:16px 14px 90px;max-width:100%}
+  .site-header{padding:0 14px}
+  .header-steps{gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .hstep{font-size:11px;padding:6px 9px;white-space:nowrap}
+  .draft-layout{flex-direction:column;gap:14px}
+  .draft-sidebar{
+    width:100%;position:static;max-height:none;order:3;
+    padding:12px;
+  }
+  .draft-main{order:1}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+  .tab{white-space:nowrap;flex-shrink:0}
+  .clock{flex-direction:column;align-items:flex-start;gap:10px}
+  .clock-name{font-size:18px}
+  .needs-row{gap:5px}
+  .g6{grid-template-columns:repeat(2,1fr)}
+  .results-grid{grid-template-columns:1fr}
+  /* Draft board: keep horizontal scroll (a 14-column grid cannot stack),
+     but shrink it and add a visible scroll hint */
+  .board-wrap,.setup-board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .btable{font-size:10px}
+  .bcell{min-width:64px;padding:3px 4px}
+  /* Sticky callout-style scroll hint above wide tables */
+  .mobile-scroll-hint{display:flex;align-items:center;gap:6px;font-size:11px;
+    color:var(--text3);padding:6px 2px;font-weight:600}
+}
+@media (min-width:769px){
+  .mobile-scroll-hint{display:none}
+}
+
+/* canvas for image export (hidden) */
+#roster-canvas{display:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useRef,useCallback,useEffect,useMemo}=React;
+
+const POSITIONS=["ALL","QB","RB","WR","TE","RB/WR"];
+// Name suffixes to skip when extracting last name for display
+const NAME_SUFFIXES=new Set(["jr","jr.","sr","sr.","ii","iii","iv","v","vi"]);
+function lastName(name){
+  if(!name)return"";
+  const parts=name.trim().split(/\s+/);
+  if(parts.length<=1)return parts[0]||"";
+  // If last part is a suffix, use the part before it
+  const last=parts[parts.length-1].toLowerCase().replace(/\.$/,"");
+  if(NAME_SUFFIXES.has(last+".")|| NAME_SUFFIXES.has(last)){
+    return parts.slice(-2).join(" ");
+  }
+  return parts[parts.length-1];
+}
+
+// Responsive breakpoint hook — mirrors the CSS breakpoint at 768px.
+// Components that need fundamentally different markup on mobile (not just
+// different CSS) read this to choose between desktop and mobile JSX paths.
+// Desktop rendering paths are untouched; this only adds a parallel mobile path.
+const MOBILE_BREAKPOINT=768;
+function useIsMobile(){
+  const[isMobile,setIsMobile]=useState(
+    typeof window!=="undefined"?window.innerWidth<MOBILE_BREAKPOINT:false
+  );
+  useEffect(()=>{
+    function onResize(){setIsMobile(window.innerWidth<MOBILE_BREAKPOINT);}
+    window.addEventListener("resize",onResize);
+    return()=>window.removeEventListener("resize",onResize);
+  },[]);
+  return isMobile;
+}
+
+const DEF_TEAMS=["Leigh","Stan","Bram","Rob","Bruce","Cory","Liam","James","Pat","Budd","Chow","Evan","Yonni","Aaron"];
+const DEF_MY="Yonni";
+const DEF_ROSTER={QB:1,RB:2,WR:3,TE:1,FLEX:1,BN:5};
+const DEF_TEND={QB:1,RB:1,WR:1,TE:1};
+// 2026 traded picks (pre-loaded from league Excel)
+// Leigh=1,Stan=2,Bram=3,Rob=4,Bruce=5,Cory=6,Liam=7,James=8,Pat=9,Budd=10,Chow=11,Evan=12,Yonni=13,Aaron=14
+const DEF_TRADED_PICKS=[
+  {fromPick:14,toTeam:"Rob"},    // Aaron R1 → Rob
+  {fromPick:60,toTeam:"Aaron"},  // Rob R5 → Aaron
+  {fromPick:26,toTeam:"Bruce"},  // Bram R2 → Bruce
+  {fromPick:89,toTeam:"Bram"},   // Bruce R7 → Bram
+  {fromPick:38,toTeam:"Rob"},    // Budd R3 → Rob
+  {fromPick:109,toTeam:"Budd"},  // Rob R8 → Budd
+  {fromPick:46,toTeam:"Stan"},   // Chow R4 → Stan
+  {fromPick:114,toTeam:"Chow"},  // Stan R9 → Chow
+  {fromPick:12,toTeam:"Stan"},   // Evan R1 → Stan
+  {fromPick:83,toTeam:"Evan"},   // Stan R6 → Evan
+  {fromPick:77,toTeam:"Yonni"},  // James R6 → Yonni
+  {fromPick:13,toTeam:"James"},  // Yonni R1 → James
+];
+const SK="wreckineyez-mock-v5";
+
+function load(){try{return JSON.parse(localStorage.getItem(SK)||"{}")}catch{return{}}}
+function save(d){try{localStorage.setItem(SK,JSON.stringify(d))}catch{}}
+
+function gauss(){
+  let u,v;
+  do{u=Math.random()}while(u===0);
+  do{v=Math.random()}while(v===0);
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function parseCSV(txt){
+  const lines=txt.trim().split(/\r?\n/);
+  const hdrs=lines[0].split(",").map(h=>h.trim().replace(/^"|"$/g,""));
+  return lines.slice(1).map(l=>{
+    const vs=l.split(",").map(v=>v.trim().replace(/^"|"$/g,""));
+    const o={};hdrs.forEach((h,i)=>o[h]=vs[i]||"");return o;
+  });
+}
+function posType(p){return p?p.replace(/\d+$/,""):"?"}
+
+// Assign positional ranks (RB1, RB2, etc.) to players that are missing them
+function assignPosRanks(players){
+  const counters={};
+  // Sort by rank first so positional numbers are assigned in order
+  const sorted=[...players].sort((a,b)=>a.rank-b.rank);
+  sorted.forEach(p=>{
+    if(!p.posRank||p.posRank===p.pos){
+      counters[p.pos]=(counters[p.pos]||0)+1;
+      p.posRank=p.pos+counters[p.pos];
+    }
+  });
+  return players;
+}
+
+function normPlayers(rows){
+  // Try to detect format from headers
+  const first=rows[0]||{};
+  const isECR="PLAYER NAME" in first||"RK" in first;
+
+  let players;
+  if(isECR){
+    players=rows.filter(r=>r["PLAYER NAME"]&&r["RK"]).map((r,i)=>({
+      rank:   parseInt(r["RK"])||i+1,
+      name:   (r["PLAYER NAME"]||"").trim(),
+      team:   (r["TEAM"]||r["Team"]||"").trim().toUpperCase(),
+      pos:    posType(r["POS"]||""),
+      posRank:r["POS"]||"",
+      bye:    (r["BYE WEEK"]||r["Bye"]||r["BYE"]||"").trim(),
+      tier:   parseInt(r["TIERS"]||r["Tier"]||"1")||1,
+    }));
+  } else {
+    // ADP format — column names vary between downloads
+    players=rows.filter(r=>r["Player"]||r["Name"]).map((r,i)=>({
+      rank:   parseInt(r["Rank"]||r["RK"]||r["Overall Rank"]||"")||i+1,
+      name:   (r["Player"]||r["Name"]||"").trim(),
+      team:   (r["Team"]||r["TEAM"]||"").trim().toUpperCase(),
+      pos:    posType(r["POS"]||r["Position"]||""),
+      posRank:r["POS"]||r["Position"]||"",
+      bye:    (r["Bye"]||r["BYE"]||r["BYE WEEK"]||"").trim(),
+      tier:   1,
+    }));
+  }
+
+  // Filter blanks, then fill in any missing posRank values
+  players=players.filter(p=>p.name);
+  return assignPosRanks(players);
+}
+
+function buildOrder(nTeams,nRounds){
+  const picks=[];
+  for(let r=0;r<nRounds;r++){
+    const row=r%2===0?[...Array(nTeams).keys()]:[...Array(nTeams).keys()].reverse();
+    row.forEach(t=>picks.push({round:r+1,teamIdx:t,overall:picks.length+1}));
+  }
+  return picks;
+}
+
+function needPenalty(pos,roster,round,nRounds,slots){
+  const cnt=(roster||[]).filter(p=>p.pos===pos).length;
+  const late=round>nRounds*0.65;
+  if(pos==="QB"){if(cnt>=2)return 40;if(cnt>=1&&!late)return 12;if(cnt>=1&&late)return 2.5;return 1;}
+  if(pos==="TE"){if(cnt>=2)return 30;if(cnt>=1&&!late)return 10;if(cnt>=1&&late)return 2;return 1;}
+  if(pos==="RB"||pos==="WR"){
+    const st=slots[pos]||(pos==="RB"?2:3),fl=slots.FLEX||1,bn=slots.BN||5;
+    if(cnt>=st+fl+Math.round(bn*0.4))return 4;
+    if(cnt>=st+fl)return 1.6;if(cnt>=st)return 1.2;return 1;
+  }
+  // K and DST: only draftable if the roster has explicit slots
+  if(pos==="K"){if(!(slots.K>0))return 99999;if(cnt>=1)return 999;if(!late)return 8;return 1;}
+  if(pos==="DST"){if(!(slots.DST>0))return 99999;if(cnt>=1)return 999;if(!late)return 8;return 1;}
+  return 1;
+}
+function simPick(players,drafted,variability,roster,round,nRounds,slots,tend){
+  const avail=players.filter(p=>!drafted.has(p.name));
+  if(!avail.length)return null;
+  const scored=avail.map(p=>{
+    const sd=Math.max(1.5,p.rank*0.10+1.0)*variability;
+    return{player:p,score:(p.rank+gauss()*sd)*(tend[p.pos]??1)*needPenalty(p.pos,roster,round,nRounds,slots)};
+  });
+  scored.sort((a,b)=>a.score-b.score);
+  return scored[0].player;
+}
+
+/*
+ * computeSurvival
+ * ---------------
+ * Deterministic sigmoid formula calibrated against Monte Carlo ground truth:
+ *
+ *   P(survive) = Φ((effectiveRank - (n_picks + 1)) / σ)
+ *
+ * where:
+ *   σ = 1.23 × n_picks^0.334 × max(0.05, variability)
+ *       (calibrated: σ scales linearly with variability)
+ *
+ *   effectiveRank = position of player in pool sorted by (rank × tendency[pos])
+ *       (tendencies < 1 → position reached earlier; > 1 → avoided, reached later)
+ *
+ * Guaranteed monotone within each position group. Fast O(n log n).
+ */
+function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
+                          numRounds,rosterSlots,tendencies,variability,teams){
+  const isMyTurnNow=order[currentPickIdx]&&order[currentPickIdx].teamIdx===myIdx&&!picks[order[currentPickIdx].overall];
+
+  let searchFrom=isMyTurnNow?currentPickIdx+1:currentPickIdx;
+  let myNextIdx=-1;
+  for(let i=searchFrom;i<order.length;i++){
+    const slot=order[i];
+    if(slot.teamIdx===myIdx&&!picks[slot.overall]){myNextIdx=i;break;}
+  }
+
+  const out={};
+  availPlayers.forEach(p=>out[p.name]=1.0);
+  if(myNextIdx===-1)return out;
+
+  const intervening=[];
+  const startIdx=isMyTurnNow?currentPickIdx+1:currentPickIdx;
+  for(let i=startIdx;i<myNextIdx;i++){
+    const pick=order[i];
+    if(!picks[pick.overall]&&pick.teamIdx!==myIdx)intervening.push(pick);
+  }
+  if(intervening.length===0)return out;
+
+  const nPicks=intervening.length;
+  // σ: calibrated power law × linear variability scaling
+  const sigma=1.23*Math.pow(nPicks,0.334)*Math.max(0.05,variability);
+  const cutoff=nPicks+1;
+
+  // Standard normal CDF (Abramowitz & Stegun 26.2.17, max error 7.5e-8)
+  function normalCDF(x){
+    if(x>6)return 1;if(x<-6)return 0;
+    const t=1/(1+0.2316419*Math.abs(x));
+    const poly=t*(0.319381530+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+    const base=1-poly*Math.exp(-x*x/2)/Math.sqrt(2*Math.PI);
+    return x>=0?base:1-base;
+  }
+
+  // Sort pool by effective score = rank × tendency[pos]
+  // Lower effective score → picked sooner → lower survival
+  const sorted=[...availPlayers].sort((a,b)=>{
+    const ea=a.rank*(tendencies[a.pos]??1);
+    const eb=b.rank*(tendencies[b.pos]??1);
+    return ea-eb;
+  });
+
+  sorted.forEach((p,i)=>{
+    const rankInPool=i+1;
+    out[p.name]=normalCDF((rankInPool-cutoff)/sigma);
+  });
+
+  return out;
+}
+
+/* ── PB ── */
+function PB({pos,posRank,style}){
+  return<span className={`pb ${pos}`} style={style}>{posRank||pos}</span>;
+}
+
+/* ── Autocomplete ── */
+function AC({value,onChange,players,placeholder}){
+  const[q,setQ]=useState(value||"");
+  const[open,setOpen]=useState(false);
+  const ref=useRef(null);
+  useEffect(()=>setQ(value||""),[value]);
+  const matches=useMemo(()=>
+    q.length>=1?players.filter(p=>p.name.toLowerCase().includes(q.toLowerCase())).slice(0,9):[]
+  ,[q,players]);
+  useEffect(()=>{
+    const h=e=>{if(!ref.current?.contains(e.target))setOpen(false)};
+    document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);
+  },[]);
+  function pick(p){setQ(p.name);onChange(p.name);setOpen(false)}
+  return(
+    <div className="ac" ref={ref}>
+      <input value={q} placeholder={placeholder||"Search…"}
+        onChange={e=>{setQ(e.target.value);onChange(e.target.value);setOpen(true)}}
+        onFocus={()=>setOpen(true)}/>
+      {open&&matches.length>0&&(
+        <div className="ac-list">
+          {matches.map(p=>(
+            <div key={p.name} className="ac-item" onMouseDown={()=>pick(p)}>
+              <PB pos={p.pos} posRank={p.posRank}/>
+              <span style={{fontWeight:600}}>{p.name}</span>
+              <span style={{color:"var(--text3)",fontSize:11,marginLeft:"auto"}}>{p.team}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Team Manager ── */
+function TeamManager({teams,setTeams,myTeam,setMyTeam}){
+  const[newName,setNewName]=useState("");
+  const dragIdx=useRef(null);
+  const[overIdx,setOverIdx]=useState(null);
+
+  function rename(i,val){
+    const t=[...teams];const old=t[i];t[i]=val;setTeams(t);
+    if(myTeam===old)setMyTeam(val);
+  }
+  function remove(i){
+    const t=teams.filter((_,j)=>j!==i);setTeams(t);
+    if(myTeam===teams[i])setMyTeam(t[0]||"");
+  }
+  function addTeam(){
+    const n=newName.trim();if(!n||teams.includes(n))return;
+    setTeams([...teams,n]);setNewName("");
+  }
+  function onDragStart(i){dragIdx.current=i}
+  function onDragOver(e,i){e.preventDefault();setOverIdx(i)}
+  function onDrop(i){
+    if(dragIdx.current===null||dragIdx.current===i){setOverIdx(null);return}
+    const t=[...teams];const[m]=t.splice(dragIdx.current,1);t.splice(i,0,m);
+    setTeams(t);dragIdx.current=null;setOverIdx(null);
+  }
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
+        <span style={{fontSize:12,color:"var(--text3)"}}>
+          {teams.length} teams · drag to reorder · click name to rename
+        </span>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:13,color:"var(--text2)",fontWeight:700}}>Your team:</span>
+          <select value={myTeam} onChange={e=>{
+              if(e.target.value==="Yonni"&&myTeam!=="Yonni"){
+                alert("Nice try, you wish you were me. Select a different team to draft as.");
+                return;
+              }
+              setMyTeam(e.target.value);
+            }}
+            data-wt="my-team"
+            style={{width:"auto",fontSize:14,height:34,padding:"0 10px",
+              fontWeight:700,color:"var(--text)",background:"var(--s2)",
+              border:"1px solid var(--border2)",borderRadius:"var(--r)"}}>
+            {teams.map(t=><option key={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="team-list">
+        {teams.map((t,i)=>(
+          <div key={i} className={`team-item${overIdx===i?" ghost-over":""}`}
+            draggable onDragStart={()=>onDragStart(i)}
+            onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)}
+            onDragEnd={()=>setOverIdx(null)}>
+            <span className="team-drag">⠿</span>
+            <span className="team-num">{i+1}</span>
+            <input className="team-edit" defaultValue={t} key={`${i}-${t}`}
+              onBlur={e=>{const v=e.target.value.trim();if(v&&v!==t)rename(i,v)}}
+              onKeyDown={e=>{if(e.key==="Enter")e.target.blur()}}/>
+            {t===myTeam&&<span className="team-you">You</span>}
+            <button className="ghost" onClick={()=>remove(i)}
+              style={{padding:"2px 7px",fontSize:16,lineHeight:1,color:"var(--text3)"}}>×</button>
+          </div>
+        ))}
+      </div>
+      <div className="add-team-row">
+        <input value={newName} onChange={e=>setNewName(e.target.value)}
+          placeholder="Add team…" style={{flex:1}}
+          onKeyDown={e=>{if(e.key==="Enter")addTeam()}}/>
+        <button onClick={addTeam} disabled={!newName.trim()} style={{padding:"7px 20px"}}>+ Add</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Pre-draft board ── */
+function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,tradedPicks,setTradedPicks,fullWidth}){
+  const[modal,setModal]=useState(null);
+  const[kPlayer,setKPlayer]=useState("");
+  const[tradeTo,setTradeTo]=useState("");
+  const myIdx=teams.indexOf(myTeam);
+  const order=useMemo(()=>buildOrder(teams.length,numRounds),[teams,numRounds]);
+
+  const keeperByPick={};
+  keepers.forEach(k=>{
+    const ti=teams.indexOf(k.team);
+    const slot=order.find(p=>p.round===parseInt(k.round)&&p.teamIdx===ti);
+    if(slot)keeperByPick[slot.overall]=k;
+  });
+  const tradeByPick={};
+  tradedPicks.forEach(t=>tradeByPick[t.fromPick]=t);
+
+  function openCell(pick){
+    const keeper=keeperByPick[pick.overall];
+    const trade=tradeByPick[pick.overall];
+    const others=teams.filter(t=>t!==teams[pick.teamIdx]);
+    setKPlayer(keeper?.player||"");
+    setTradeTo(trade?.toTeam||others[0]||"");
+    setModal({...pick,keeper,trade});
+  }
+  function saveKeeper(){
+    if(!kPlayer)return;
+    const{round,teamIdx}=modal;const team=teams[teamIdx];
+    setKeepers(prev=>prev.filter(k=>!(k.team===team&&parseInt(k.round)===round)&&k.player!==kPlayer));
+    setKeepers(prev=>[...prev,{team,player:kPlayer,round}]);
+    setModal(null);setKPlayer("");
+  }
+  function clearKeeper(){
+    const{round,teamIdx}=modal;const team=teams[teamIdx];
+    setKeepers(prev=>prev.filter(k=>!(k.team===team&&parseInt(k.round)===round)));
+    setModal(null);
+  }
+  function saveTrade(){
+    const{overall,teamIdx}=modal;
+    setTradedPicks(prev=>[...prev.filter(t=>t.fromPick!==overall),
+      {fromTeam:teams[teamIdx],fromPick:overall,toTeam:tradeTo}]);
+    setModal(null);
+  }
+  function clearTrade(){
+    setTradedPicks(prev=>prev.filter(t=>t.fromPick!==modal.overall));
+    setModal(null);
+  }
+  const rounds=Array.from({length:numRounds},(_,i)=>i+1);
+  return(
+    <>
+      <div style={{display:"flex",gap:16,marginBottom:12,alignItems:"center",flexWrap:"wrap"}}>
+        <span style={{fontSize:12,color:"var(--text3)"}}>Click any cell to set a keeper or traded pick.</span>
+        <div style={{display:"flex",gap:10}}>
+          <span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"var(--go)"}}>
+            <span style={{width:10,height:10,background:"var(--go-bg)",border:"1px solid var(--go-border)",borderRadius:2,display:"inline-block"}}></span>
+            Keeper
+          </span>
+          <span style={{display:"inline-flex",alignItems:"center",gap:5,fontSize:11,fontWeight:700,color:"var(--warn)"}}>
+            <span style={{width:10,height:10,background:"var(--warn-bg)",border:"1px solid var(--warn-border)",borderRadius:2,display:"inline-block"}}></span>
+            Traded
+          </span>
+        </div>
+      </div>
+      <div className={fullWidth?"setup-board-wrap":"board-wrap"}>
+        <table className="btable" style={fullWidth?{width:"100%"}:{}}>
+          <thead>
+            <tr>
+              <th className="rh" style={{background:"var(--bg)"}}></th>
+              {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}>{t}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rounds.map(r=>{
+              // Use arrays per team-slot so multiple traded picks landing on the same
+              // team in the same round don't overwrite each other.
+              const byTeam={};
+              order.filter(p=>p.round===r).forEach(p=>{
+                if(!byTeam[p.teamIdx])byTeam[p.teamIdx]=[];
+                byTeam[p.teamIdx].push(p);
+              });
+              return(
+                <tr key={r}>
+                  <td className="rh">{r}</td>
+                  {teams.map((_,i)=>{
+                    const cellPicks=byTeam[i]||[];
+                    if(!cellPicks.length)return<td key={i}/>;
+                    return(
+                      <td key={i} style={{padding:cellPicks.length>1?"3px 4px":undefined}}>
+                        {cellPicks.map(pick=>{
+                          const keeper=keeperByPick[pick.overall];
+                          const trade=tradeByPick[pick.overall];
+                          const pl=keeper?players.find(p=>p.name===keeper.player):null;
+                          return(
+                            <div key={pick.overall}
+                              className={`bcell clickable${i===myIdx?" mine-col":""}${keeper?" keeper":""}${trade&&!keeper?" traded":""}`}
+                              style={{borderRadius:"var(--r)",padding:"3px 4px",marginBottom:cellPicks.length>1?2:0}}
+                              onClick={()=>openCell(pick)}>
+                              {keeper?(
+                                <>
+                                  <div style={{display:"flex",alignItems:"center",gap:3}}>
+                                    {pl&&<PB pos={pl.pos} posRank={pl.pos} style={{fontSize:9,padding:"1px 4px"}}/>}
+                                    <span className="bn" style={{color:"var(--go)"}}>{lastName(keeper.player)}</span>
+                                  </div>
+                                  <span className="bm" style={{color:"var(--go)"}}>keeper</span>
+                                </>
+                              ):trade?(
+                                <>
+                                  <span className="bm" style={{color:"var(--warn)"}}>to</span>
+                                  <span className="bn" style={{color:"var(--warn)"}}>{trade.toTeam.toUpperCase()}</span>
+                                </>
+                              ):(
+                                <span className="bnum">#{pick.overall}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {modal&&(
+        <div className="overlay" onClick={e=>{if(e.target===e.currentTarget)setModal(null)}}>
+          <div className="modal">
+            <div className="modal-title">Round {modal.round} · Pick #{modal.overall}</div>
+            <div className="modal-sub">{teams[modal.teamIdx]}'s pick</div>
+            <div className="modal-section">
+              <div className="modal-sec-label" style={{color:"var(--go)"}}>Keeper</div>
+              <div style={{display:"flex",gap:8}}>
+                <div style={{flex:1}}>
+                  <AC value={kPlayer} onChange={setKPlayer} players={players}
+                    placeholder={players.length?"Search players…":"Load rankings first"}/>
+                </div>
+                <button className="primary" onClick={saveKeeper} disabled={!kPlayer}
+                  style={{padding:"8px 16px"}}>Set</button>
+                {modal.keeper&&<button className="danger-ghost" onClick={clearKeeper}>Clear</button>}
+              </div>
+            </div>
+            <div className="modal-section">
+              <div className="modal-sec-label" style={{color:"var(--warn)"}}>Traded pick — new owner</div>
+              <div style={{display:"flex",gap:8}}>
+                <select value={tradeTo} onChange={e=>setTradeTo(e.target.value)} style={{flex:1}}>
+                  {teams.filter(t=>t!==teams[modal.teamIdx]).map(t=><option key={t}>{t}</option>)}
+                </select>
+                <button className="primary" onClick={saveTrade} style={{padding:"8px 16px"}}>Set</button>
+                {modal.trade&&<button className="danger-ghost" onClick={clearTrade}>Clear</button>}
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <button className="ghost" onClick={()=>setModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── App ── */
+function App(){
+  const saved=useMemo(load,[]);
+  const[screen,setScreen]=useState("setup");
+  const[setupTab,setSetupTab]=useState("rankings");
+  const[teams,setTeams]=useState(saved.teams||DEF_TEAMS);
+  const[myTeam,setMyTeam]=useState(saved.myTeam||DEF_MY);
+  const[mode,setMode]=useState("mock");
+  const[variability,setVariability]=useState(1.5);
+  const[players,setPlayers]=useState(saved.players||[]);
+  const[ranksMeta,setRanksMeta]=useState(saved.ranksMeta||null);
+  const[draftOrder,setDraftOrder]=useState([]);
+  const[picks,setPicks]=useState({});
+  const[currentPickIdx,setCurrentPickIdx]=useState(0);
+  const[keepers,setKeepers]=useState(saved.keepers||[]);
+  const[tradedPicks,setTradedPicks]=useState(saved.tradedPicks||DEF_TRADED_PICKS);
+  const[rosterSlots,setRosterSlots]=useState(saved.rosterSlots||DEF_ROSTER);
+  const[tendencies,setTendencies]=useState(saved.tendencies||DEF_TEND);
+  // numRounds = total roster spots (starters + bench). Manual override still possible.
+  const derivedRounds=Object.values(rosterSlots).reduce((s,v)=>s+(v||0),0);
+  const[numRoundsOverride,setNumRoundsOverride]=useState(saved.numRoundsOverride||null);
+  const numRounds=numRoundsOverride||derivedRounds||15;
+  const[filterPos,setFilterPos]=useState("ALL");
+  const[search,setSearch]=useState("");
+  const[selPlayer,setSelPlayer]=useState(null);
+  const[isSimming,setIsSimming]=useState(false);
+  const[lastPick,setLastPick]=useState(null);
+  const[draftTab,setDraftTab]=useState("available");
+  // Feature 2: best-avail panel open/closed
+  const[bestAvailOpen,setBestAvailOpen]=useState(true);
+  // Feature 3: player notes {playerName: noteText}
+  const[playerNotes,setPlayerNotes]=useState(saved.playerNotes||{});
+  // Feature 5: queue of player names
+  const[queue,setQueue]=useState(saved.queue||[]);
+  const[queueOpen,setQueueOpen]=useState(true);
+  const[generalNotes,setGeneralNotes]=useState(saved.generalNotes||"");
+  const[notesOpen,setNotesOpen]=useState(false);
+  const[snarkMsg,setSnarkMsg]=useState(null);
+  const[snarkTitleText,setSnarkTitleText]=useState("");
+  // Feature 9: mid-draft trade modal
+  const[tradeModal,setTradeModal]=useState(false);
+  const[tradePick,setTradePick]=useState("");
+  const[tradeTeam,setTradeTeam]=useState("");
+  const[walkthroughDone,setWalkthroughDone]=useState(()=>!!localStorage.getItem("wreckineyez-wt"));
+  const[fetchState,setFetchState]=useState("idle");
+  const[fetchError,setFetchError]=useState(null);
+  const[lastFetchSource,setLastFetchSource]=useState("ecr");
+  const simRef=useRef(null);
+
+  // Hosted version: load pre-fetched rankings.json from the same folder as this page
+  // instead of a live local proxy. Update rankings.json periodically (see README).
+  async function fetchLive(source){
+    setFetchState("loading");setFetchError(null);setLastFetchSource(source);
+    try{
+      const file=source==="adp"?"rankings-adp.json":"rankings.json";
+      const r=await fetch(file,{cache:"no-store",signal:AbortSignal.timeout(15000)});
+      if(!r.ok)throw new Error(`Could not load ${file} (HTTP ${r.status}). Make sure it's uploaded next to index.html.`);
+      const json=await r.json();
+      if(!json.players||!json.players.length)throw new Error(`${file} has no players in it.`);
+      setPlayers(json.players);
+      setRanksMeta({
+        name:`FantasyPros ${source.toUpperCase()}${json.updated?"":""}`,
+        date:json.updated?new Date(json.updated).toLocaleDateString():new Date().toLocaleDateString(),
+      });
+      setFetchState("done");
+    }catch(e){
+      setFetchError(e.message);setFetchState("error");
+    }
+  }
+
+  useEffect(()=>{
+    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes});
+  },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue]);
+
+  const myIdx=teams.indexOf(myTeam);
+
+  const effectiveOrder=useCallback(()=>{
+    if(!draftOrder.length)return[];
+    const tm={};tradedPicks.forEach(t=>{tm[t.fromPick]=teams.indexOf(t.toTeam)});
+    return draftOrder.map(p=>{const ni=tm[p.overall];return(ni!==undefined&&ni>=0)?{...p,teamIdx:ni}:p});
+  },[draftOrder,tradedPicks,teams]);
+
+  // Feature 9: apply a mid-draft pick trade
+  function applyMidDraftTrade(){
+    if(!tradePick||!tradeTeam)return;
+    // tradePick is either "R.PP_overall" (from select UI) or legacy overall number
+    let pickNum;
+    if(tradePick.includes("_")){
+      pickNum=parseInt(tradePick.split("_")[1]);
+    } else if(tradePick.includes(".")){
+      // resolve round.pos to overall
+      const parts=tradePick.split(".");
+      const r=parseInt(parts[0]),pos=parseInt(parts[1]);
+      const roundPicks=order.filter(p=>p.round===r);
+      const sorted=r%2===1?[...roundPicks].sort((a,b)=>a.overall-b.overall):[...roundPicks].sort((a,b)=>b.overall-a.overall);
+      pickNum=sorted[pos-1]?.overall;
+    } else {
+      pickNum=parseInt(tradePick);
+    }
+    if(!pickNum)return;
+    setTradedPicks(prev=>{
+      const filtered=prev.filter(t=>t.fromPick!==pickNum);
+      return[...filtered,{fromPick:pickNum,toTeam:tradeTeam}];
+    });
+    setTradeModal(false);setTradePick("");setTradeTeam("");
+  }
+
+  // Export CSV of draft results
+  function exportCSV(){
+    const ord=effectiveOrder();
+    const rows=[["Overall","Round","Pick","Team","Player","Position","NFL Team","Bye"]];
+    ord.forEach(p=>{
+      const player=picks[p.overall];
+      const roundPick=((p.overall-1)%teams.length)+1;
+      rows.push([
+        p.overall,p.round,roundPick,teams[p.teamIdx]||"",
+        player?.name||"",player?.pos||"",player?.team||"",player?.bye||""
+      ]);
+    });
+    const csv=rows.map(r=>r.map(v=>String(v).includes(",")?`"${v}"`:v).join(",")).join("\n");
+    const a=document.createElement("a");
+    a.href="data:text/csv;charset=utf-8,"+encodeURIComponent(csv);
+    a.download=`wreckineyez-draft-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  function getRoster(np,order,tIdx){
+    return order.filter(p=>p.teamIdx===tIdx&&np[p.overall]).map(p=>np[p.overall]);
+  }
+  function advance(idx,np,order){let i=idx;while(i<order.length&&np[order[i]?.overall])i++;return i}
+
+  function handleFile(e){
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const rows=parseCSV(ev.target.result);
+        const norm=normPlayers(rows).filter(p=>p.name);
+        setPlayers(norm);setRanksMeta({name:file.name,date:new Date().toLocaleDateString()});
+      }catch(err){alert("Error: "+err.message)}
+    };
+    reader.readAsText(file);e.target.value="";
+  }
+
+  function startDraft(){
+    const order=buildOrder(teams.length,numRounds);
+    setDraftOrder(order);
+    const tm={};tradedPicks.forEach(t=>{tm[t.fromPick]=teams.indexOf(t.toTeam)});
+    const eff=order.map(p=>{const ni=tm[p.overall];return(ni!==undefined&&ni>=0)?{...p,teamIdx:ni}:p});
+    const np={};
+    keepers.forEach(k=>{
+      const round=parseInt(k.round);const ti=teams.indexOf(k.team);if(ti<0)return;
+      const slot=eff.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);if(!slot)return;
+      const pl=players.find(p=>p.name.toLowerCase()===k.player.toLowerCase());
+      if(pl)np[slot.overall]=pl;
+    });
+    setPicks(np);
+    const first=eff.findIndex(p=>!np[p.overall]);
+    setCurrentPickIdx(first>=0?first:0);
+    setSelPlayer(null);setSearch("");setFilterPos("ALL");
+    setScreen("draft");setDraftTab("available");
+  }
+
+  function runSim(){
+    if(mode!=="mock")return;
+    const order=effectiveOrder();let idx=currentPickIdx,np={...picks};
+    function step(){
+      if(idx>=order.length){setIsSimming(false);return}
+      const pick=order[idx];
+      if(np[pick.overall]){idx++;step();return}
+      if(pick.teamIdx===myIdx){setPicks(np);setCurrentPickIdx(idx);setIsSimming(false);return}
+      const roster=getRoster(np,order,pick.teamIdx);
+      const pl=simPick(players,new Set(Object.values(np).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies);
+      if(!pl){setIsSimming(false);return}
+      np={...np,[pick.overall]:pl};idx++;
+      setPicks({...np});
+      setCurrentPickIdx(idx);
+      setLastPick({player:pl,team:teams[pick.teamIdx],overall:pick.overall,round:pick.round});
+      simRef.current=setTimeout(step,110);
+    }
+    setIsSimming(true);step();
+  }
+
+  function recordPick(player){
+    const order=effectiveOrder();const pick=order[currentPickIdx];if(!pick)return;
+    const np={...picks,[pick.overall]:player};
+    setPicks(np);
+    const nextIdx=advance(currentPickIdx+1,np,order);
+    setCurrentPickIdx(nextIdx);
+    setSelPlayer(null);setSearch("");
+    // Snarky msg: ~1-in-8 picks when not drafting as Yonni
+    if(myTeam!=="Yonni"&&Math.random()<0.125){
+      setSnarkTitleText(snarkTitle());
+      setSnarkMsg(snarkMessage());
+    }
+    // In mock mode, immediately sim the remaining CPU picks
+    if(mode==="mock"){
+      // Kick off sim from the next pick
+      const simFromIdx=nextIdx;
+      let idx=simFromIdx,sp={...np};
+      function step(){
+        if(idx>=order.length){setIsSimming(false);return}
+        const pick=order[idx];
+        if(sp[pick.overall]){idx++;step();return}
+        if(pick.teamIdx===myIdx){setPicks(sp);setCurrentPickIdx(idx);setIsSimming(false);return}
+        const roster=getRoster(sp,order,pick.teamIdx);
+        const pl=simPick(players,new Set(Object.values(sp).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies);
+        if(!pl){setIsSimming(false);return}
+        sp={...sp,[pick.overall]:pl};idx++;
+        setPicks({...sp});
+        setCurrentPickIdx(idx);
+        setLastPick({player:pl,team:teams[pick.teamIdx],overall:pick.overall,round:pick.round});
+        simRef.current=setTimeout(step,110);
+      }
+      setIsSimming(true);
+      simRef.current=setTimeout(step,80);
+    }
+  }
+
+  const order=effectiveOrder();
+  const curPick=order[currentPickIdx];
+  const curTeam=curPick?teams[curPick.teamIdx]:null;
+  const isMyTurn=!!(curPick&&curPick.teamIdx===myIdx);
+  const done=currentPickIdx>=order.length;
+  const drafted=new Set(Object.values(picks).map(p=>p.name));
+  // Full undrafted pool (ignoring position filter and search) — used for survival probability
+  // so that filtering by "RB" doesn't change the probability of WRs being taken
+  const availAll=useMemo(()=>players.filter(p=>{
+    if(drafted.has(p.name))return false;
+    if(p.pos==="K"&&!(rosterSlots.K>0))return false;
+    if(p.pos==="DST"&&!(rosterSlots.DST>0))return false;
+    return true;
+  }),[players,drafted,rosterSlots]);
+
+  const avail=useMemo(()=>players.filter(p=>{
+    if(drafted.has(p.name))return false;
+    // K and DST hidden unless roster explicitly has slots for them
+    if(p.pos==="K"&&!(rosterSlots.K>0))return false;
+    if(p.pos==="DST"&&!(rosterSlots.DST>0))return false;
+    if(filterPos==="RB/WR"&&p.pos!=="RB"&&p.pos!=="WR")return false;
+    if(filterPos!=="ALL"&&filterPos!=="RB/WR"&&p.pos!==filterPos)return false;
+    if(search&&!p.name.toLowerCase().includes(search.toLowerCase())&&!p.team.toLowerCase().includes(search.toLowerCase()))return false;
+    return true;
+  }),[players,drafted,filterPos,search,rosterSlots]);
+  const rosters={};teams.forEach(t=>rosters[t]=[]);
+  order.forEach(pick=>{
+    if(picks[pick.overall]){const tn=teams[pick.teamIdx];if(rosters[tn])rosters[tn].push({...picks[pick.overall],pickNum:pick.overall,round:pick.round})}
+  });
+  const total=order.length,picksDone=Object.keys(picks).length;
+  const canStart=players.length>0||mode==="live";
+
+  // Feature 2: top 2 available per position (uses drafted — must be after line above)
+  const bestByPos=useMemo(()=>{
+    const res={};
+    ["QB","RB","WR","TE"].forEach(pos=>{
+      res[pos]=players.filter(p=>p.pos===pos&&!drafted.has(p.name)).slice(0,2);
+    });
+    return res;
+  },[players,drafted]);
+
+  // Feature 7: needs summary — my pos counts so far
+  const myRoster=rosters[myTeam]||[];
+  const myPosCounts=useMemo(()=>{
+    const c={QB:0,RB:0,WR:0,TE:0};
+    myRoster.forEach(p=>{if(c[p.pos]!==undefined)c[p.pos]++;});
+    return c;
+  },[myRoster]);
+
+  const survival=useMemo(()=>
+    mode==="mock"&&!done&&screen==="draft"
+      ?computeSurvival(availAll,picks,order,currentPickIdx,myIdx,numRounds,rosterSlots,tendencies,variability,teams)
+      :null
+  ,[availAll,picks,order,currentPickIdx,myIdx,numRounds,rosterSlots,tendencies,variability,teams,mode,done,screen]);
+
+  // Auto-fetch rankings from proxy on startup if none are saved
+  useEffect(()=>{
+    if(players.length===0){
+      // Small delay so the UI renders first
+      const t=setTimeout(()=>fetchLive("ecr"),800);
+      return()=>clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  useEffect(()=>{
+    if(done&&screen==="draft"){
+      const t=setTimeout(()=>setScreen("results"),600);
+      return()=>clearTimeout(t);
+    }
+  },[done,screen]);
+
+  const SETUP_TABS=[["rankings","Rankings"],["settings","Settings"],["board","Draft Board"]];
+
+  /* ─── Jazz swoosh SVG for header ─── */
+  const JazzEye=()=>(
+    <svg width="20" height="14" viewBox="0 0 22 15" fill="none">
+      <ellipse cx="11" cy="7.5" rx="10.5" ry="6.5" stroke="white" strokeWidth="1.4" fill="rgba(255,255,255,0.08)"/>
+      <circle cx="11" cy="7.5" r="3.5" fill="white" fillOpacity="0.3"/>
+      <circle cx="11" cy="7.5" r="2" fill="white"/>
+      <circle cx="12" cy="6.8" r="0.7" fill="var(--bg)"/>
+    </svg>
+  );
+
+  return(
+    <>
+      <header className="site-header">
+        <div className="logo">
+          <div className="logo-mark"><JazzEye/></div>
+          <div>
+            <div className="logo-text">Wreckineyez</div>
+            <div className="logo-sub">Mock Draft</div>
+          </div>
+        </div>
+        {screen==="setup"&&(
+          <div className="header-steps">
+            {SETUP_TABS.map(([id,lbl],i)=>(
+              <button key={id}
+                className={`hstep${setupTab===id?" on":""}${i>0&&players.length>0?" done":""}`}
+                onClick={()=>setSetupTab(id)}>
+                {i+1}. {lbl}
+              </button>
+            ))}
+          </div>
+        )}
+        {screen==="setup"&&canStart&&(
+          <button className="hot" onClick={startDraft}
+            data-wt="start-draft"
+            style={{marginLeft:12,padding:"6px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
+            Start Draft →
+          </button>
+        )}
+        {screen==="draft"&&(
+          <button onClick={()=>{clearTimeout(simRef.current);setScreen("setup");setPicks({});setCurrentPickIdx(0);setIsSimming(false)}}
+            style={{marginLeft:"auto",background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
+              color:"var(--text2)",fontSize:12,padding:"5px 13px"}}>
+            ← Setup
+          </button>
+        )}
+        {screen==="results"&&(
+          <div style={{display:"flex",gap:8,marginLeft:"auto"}}>
+            <button onClick={()=>setScreen("draft")}
+              style={{background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
+                color:"var(--text2)",fontSize:12,padding:"5px 13px"}}>
+              ← Draft Board
+            </button>
+          </div>
+        )}
+      </header>
+
+      {screen==="setup"&&(
+        <div className="page" style={{overflowX:"visible"}}>
+
+          {/* ── Step 1: Rankings ── */}
+          {setupTab==="rankings"&&(
+            <>
+              <div className="step-head">
+                <h2>Rankings</h2>
+                <p>Rankings load automatically from a file hosted alongside this page. You can also load a CSV manually as a fallback.</p>
+              </div>
+
+              {/* ── Auto-load card ── */}
+              <div className="card">
+                <div className="card-title">Rankings file</div>
+                <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.6}}>
+                  This loads <code style={{background:"var(--s3)",padding:"1px 6px",borderRadius:4,fontSize:11}}>rankings.json</code> automatically
+                  when the app opens. The league commissioner updates this file periodically — you don't need to do anything.
+                </p>
+                <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+                  <button className="primary" onClick={()=>fetchLive("ecr")} disabled={fetchState==="loading"}
+                    data-wt="fetch-ecr"
+                    style={{padding:"9px 20px",fontSize:14}}>
+                    {fetchState==="loading"?"Loading…":"⬇ Reload rankings"}
+                  </button>
+                </div>
+                {fetchError&&(
+                  <div className="banner warn" style={{marginTop:12,flexDirection:"column",alignItems:"flex-start",gap:6}}>
+                    <span>{fetchError}</span>
+                    <span style={{fontSize:11,opacity:0.8}}>If this keeps happening, use the CSV fallback below.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* ── CSV fallback card ── */}
+              <div className="card">
+                <div className="card-title">Fallback — load CSV manually</div>
+                <p style={{fontSize:12,color:"var(--text3)",marginBottom:14,lineHeight:1.6}}>
+                  If the rankings file can't load, download a CSV from <a
+                    href="https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php"
+                    target="_blank" rel="noopener" style={{color:"var(--teal)"}}>FantasyPros ECR</a> or <a
+                    href="https://www.fantasypros.com/nfl/adp/overall.php"
+                    target="_blank" rel="noopener" style={{color:"var(--teal)"}}>ADP</a> and load it here.
+                </p>
+                <div className="frow">
+                  <label>Load CSV <span style={{fontWeight:400,color:"var(--text3)"}}>(ECR or ADP — auto-detected)</span></label>
+                  <input type="file" accept=".csv" onChange={handleFile}/>
+                </div>
+              </div>
+
+              {/* ── Status ── */}
+              {players.length>0?(
+                <div className="banner ok">
+                  <span style={{fontSize:16}}>✓</span>
+                  <span><strong>{players.length} players</strong> loaded</span>
+                  {ranksMeta&&(
+                    <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>
+                      · {ranksMeta.name} · {ranksMeta.date}
+                    </span>
+                  )}
+                  <span style={{marginLeft:"auto",fontSize:11,opacity:0.7}}>Saved</span>
+                </div>
+              ):(
+                <div className="banner warn">No rankings loaded yet — click Fetch ECR above, or load a CSV.</div>
+              )}
+
+              <div style={{display:"flex",justifyContent:"flex-end",marginTop:22}}>
+                <button className="primary" onClick={()=>setSetupTab("settings")}
+                  style={{padding:"10px 28px",fontSize:14}}>Next: Settings →</button>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 2: Settings ── */}
+          {setupTab==="settings"&&(
+            <>
+              <div className="step-head">
+                <h2>Settings</h2>
+                <p>Set teams, draft mode, roster configuration, and simulation behaviour.</p>
+              </div>
+
+              <div className="card">
+                <div className="card-title">Teams</div>
+                <TeamManager teams={teams} setTeams={setTeams} myTeam={myTeam} setMyTeam={setMyTeam}/>
+              </div>
+
+              <div className="card">
+                <div className="card-title">Draft</div>
+                <div className="frow">
+                  <label>Mode</label>
+                  <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                    {[["mock","Mock — CPU drafts for other teams"],["live","Live — enter every pick manually"]].map(([v,l])=>(
+                      <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,fontWeight:500}}>
+                        <input type="radio" checked={mode===v} onChange={()=>setMode(v)}/> {l}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {mode==="mock"&&(
+                <>
+                  <div className="card">
+                    <div className="card-title">Simulation</div>
+                    <div className="frow">
+                      <label>Randomness — {variability.toFixed(1)}×
+                        <span style={{fontWeight:400,color:"var(--text3)",marginLeft:6}}>
+                          {variability<0.5?"very predictable":variability<1.3?"realistic":variability<2?"chaotic":"wild"}
+                        </span>
+                      </label>
+                      <input type="range" min={0} max={3} step={0.1} value={variability}
+                        onChange={e=>setVariability(parseFloat(e.target.value))} style={{maxWidth:340,marginTop:4}}/>
+                    </div>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">Roster slots</div>
+                    <div className="g6" style={{maxWidth:480,marginBottom:10}}>
+                      {["QB","RB","WR","TE","FLEX","BN"].map(k=>(
+                        <div key={k} className="frow" style={{alignItems:"center"}}>
+                          <label style={{textAlign:"center"}}>{k}</label>
+                          <input type="number" min={0} max={20} value={rosterSlots[k]??0}
+                            style={{textAlign:"center"}}
+                            onChange={e=>setRosterSlots(p=>({...p,[k]:parseInt(e.target.value)||0}))}/>
+                        </div>
+                      ))}
+                    </div>
+                    <span style={{fontSize:11,color:"var(--text3)"}}>
+                      {["QB","RB","WR","TE","FLEX"].reduce((s,k)=>s+(rosterSlots[k]||0),0)} starters + {rosterSlots.BN||0} bench
+                    </span>
+                  </div>
+
+                  <div className="card">
+                    <div className="card-title">League tendencies</div>
+                    <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.55}}>
+                      How aggressively the league reaches for each position. Right = more aggressive (drafted earlier). Centre = neutral.
+                    </p>
+                    {["QB","RB","WR","TE"].map(pos=>{
+                      const v=tendencies[pos]??1;
+                      // Internal value: <1 = aggressive (sim picks this pos earlier), >1 = avoids
+                      // Slider display: map to [-1, +1] where 0 = neutral (v=1), +1 = very aggressive, -1 = very avoid
+                      // Internal range: 0.25 (very aggressive) to 2.5 (strong avoid), neutral at 1.0
+                      // Use log scale so the slider is symmetric: displayVal = -log2(v), range [-1.32, +2]
+                      // Simpler: linear map: displayVal in [-1,1], v = 2 - displayVal (v=1 at displayVal=1, v=0.25 at displayVal=1.75...)
+                      // Cleanest: store v in [0.25, 4.0] with v=1 at slider midpoint
+                      // Slider range [0, 2], midpoint=1, displayVal=1 → v=1 (neutral)
+                      // displayVal=0 → v=4 (strong avoid), displayVal=2 → v=0.25 (very aggressive)
+                      // v = 4^(1 - displayVal) ... or simpler: v = 2^(1 - displayVal)*0.5
+                      // Actually simplest: slider range -1 to +1, midpoint 0
+                      // v = 10^(-displayVal * 0.6) so v=1 at 0, v=0.25 at +1, v=4 at -1
+                      // Let's just use: internal range 0.25–4, stored as v; slider = log2(1/v) * 0.5 inverted
+                      // 
+                      // SIMPLEST correct approach: slider 0–100, neutral=50
+                      // v = 0.25 at slider=100, v=4.0 at slider=0, v=1.0 at slider=50
+                      // v = 0.25 * (16)^(slider/100) = 0.25 * 16^(s/100)
+                      // At s=0: 0.25*1=0.25; s=50: 0.25*4=1.0; s=100: 0.25*16=4.0 ✓
+                      const sliderVal = Math.round(50 * Math.log(v) / Math.log(4) + 50);
+                      // inverted: right = aggressive = low v = high sliderVal
+                      const displaySlider = 100 - sliderVal; // flip so right=aggressive
+                      const lbl=v<=0.35?"Very aggressive":v<=0.6?"Aggressive":v<=0.85?"Slight lean":v<=1.18?"Neutral":v<=1.7?"Slight avoid":v<=2.5?"Avoid":"Strong avoid";
+                      const isAgg=v<0.85, isAvoid=v>1.18;
+                      return(
+                        <div key={pos} style={{display:"grid",gridTemplateColumns:"44px 1fr 160px",gap:12,alignItems:"center",marginBottom:12}}>
+                          <PB pos={pos} posRank={pos} style={{textAlign:"center",padding:"4px 0",display:"block",fontSize:12}}/>
+                          <input type="range" min={0} max={100} step={1}
+                            value={displaySlider}
+                            style={{maxWidth:300}}
+                            onChange={e=>{
+                              const ds=parseInt(e.target.value);
+                              const sv=100-ds; // undo flip
+                              // v = 4^((sv-50)/50)
+                              const newV=Math.pow(4,(sv-50)/50);
+                              setTendencies(p=>({...p,[pos]:Math.round(newV*100)/100}));
+                            }}/>
+                          <span style={{fontSize:12,fontWeight:700,
+                            color:isAgg?"var(--go)":isAvoid?"var(--warn)":"var(--text3)",textAlign:"right"}}>
+                            {lbl}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    <button className="ghost" style={{fontSize:12,marginTop:4}}
+                      onClick={()=>setTendencies(DEF_TEND)}>Reset to neutral</button>
+                  </div>
+                </>
+              )}
+
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+                <button className="ghost" onClick={()=>setSetupTab("rankings")}>← Rankings</button>
+                <button className="primary" onClick={()=>setSetupTab("board")}
+                  style={{padding:"10px 28px",fontSize:14}}>Next: Draft Board →</button>
+              </div>
+            </>
+          )}
+
+          {/* ── Step 3: Draft Board ── */}
+          {setupTab==="board"&&(
+            <div style={{maxWidth:"none",overflowX:"auto"}}>
+              <div className="step-head">
+                <h2>Draft Board</h2>
+                <p>Click any cell to mark a keeper or traded pick. Your column is highlighted.</p>
+              </div>
+              <PreDraftBoard
+                teams={teams} myTeam={myTeam} numRounds={numRounds} players={players}
+                keepers={keepers} setKeepers={setKeepers}
+                tradedPicks={tradedPicks} setTradedPicks={setTradedPicks}
+                fullWidth={true}
+              />
+              {(keepers.length>0||tradedPicks.length>0)&&(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:14}}>
+                  {keepers.map((k,i)=>(
+                    <div key={i} className="chip">
+                      <span style={{color:"var(--go)",fontSize:10,fontWeight:800,textTransform:"uppercase"}}>K</span>
+                      <span>{lastName(k.player)}</span>
+                      <span style={{color:"var(--text3)",fontSize:11}}>· {k.team} R{k.round}</span>
+                      <button className="chip-x" onClick={()=>setKeepers(p=>p.filter((_,j)=>j!==i))}>×</button>
+                    </div>
+                  ))}
+                  {tradedPicks.map((t,i)=>(
+                    <div key={i} className="chip">
+                      <span style={{color:"var(--warn)",fontSize:10,fontWeight:800,textTransform:"uppercase"}}>T</span>
+                      <span>#{t.fromPick}</span>
+                      <span style={{color:"var(--text3)",fontSize:11}}>→ {t.toTeam}</span>
+                      <button className="chip-x" onClick={()=>setTradedPicks(p=>p.filter((_,j)=>j!==i))}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+                marginTop:26,paddingTop:22,borderTop:"1px solid var(--border)"}}>
+                <div>
+                  <button className="ghost" onClick={()=>setSetupTab("settings")}>← Settings</button>
+                  <div style={{fontSize:11,color:"var(--text3)",marginTop:6}}>💾 Everything saves automatically</div>
+                </div>
+                <button className={canStart?"hot":"primary"} onClick={startDraft} disabled={!canStart}
+                  style={{padding:"13px 38px",fontSize:16,letterSpacing:"0.02em"}}>
+                  Start Draft →
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Draft screen ── */}
+      {screen==="draft"&&(
+        <div className="page draft-page">
+          <div className="topbar">
+            <div className="pbar">
+              <div className="pfill" style={{width:`${total?(picksDone/total)*100:0}%`}}></div>
+            </div>
+            <span style={{fontSize:12,color:"var(--text3)",fontWeight:700,whiteSpace:"nowrap"}}>
+              {picksDone}/{total} picks
+            </span>
+            {mode==="mock"&&(
+              <div style={{display:"flex",alignItems:"center",gap:8,whiteSpace:"nowrap"}}>
+                <span style={{fontSize:10,color:"var(--text3)",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em"}}>Chaos</span>
+                <input type="range" min={0} max={3} step={0.1} value={variability}
+                  onChange={e=>setVariability(parseFloat(e.target.value))} style={{width:72}}/>
+                <span style={{fontSize:11,color:"var(--text2)",fontWeight:700,minWidth:28}}>{variability.toFixed(1)}×</span>
+              </div>
+            )}
+          </div>
+
+          <div className="draft-layout">
+            {/* ── Main column ── */}
+            <div className="draft-main">
+
+          {!done&&(
+            <div className={`clock ${isMyTurn?"mine":"theirs"}`}>
+              <div>
+                <div className="clock-label" style={{color:isMyTurn?"var(--mag)":"var(--text3)"}}>
+                  {isMyTurn?"Your pick":"On the clock"}
+                </div>
+                <div className="clock-name" style={{color:isMyTurn?"var(--teal)":curPick?.teamIdx===myIdx?"var(--teal)":"var(--text)"}}>
+                  {isMyTurn?`Pick ${curPick.overall}`:curTeam}
+                </div>
+                <div className="clock-sub">
+                  Overall #{curPick?.overall} · Round {curPick?.round} of {numRounds}
+                  {(()=>{
+                    const upcoming=order.slice(currentPickIdx).filter(p=>!picks[p.overall]);
+                    const myNextPos=upcoming.findIndex(p=>p.teamIdx===myIdx);
+                    if(isMyTurn){
+                      // On your turn: show how far until your NEXT turn after this
+                      const afterThisTurn=order.slice(currentPickIdx+1).filter(p=>!picks[p.overall]);
+                      const nextAfter=afterThisTurn.findIndex(p=>p.teamIdx===myIdx);
+                      if(nextAfter>=0){
+                        const away=nextAfter+1;
+                        return<span style={{marginLeft:10,color:"var(--text3)"}}>
+                          · next pick in {away} {away===1?"pick":"picks"}
+                        </span>;
+                      }
+                    } else if(mode==="mock"){
+                      const picksAway=myNextPos;
+                      const upTeams=upcoming.slice(0,Math.min(3,myNextPos)).map(p=>teams[p.teamIdx]);
+                      return(
+                        <>
+                          {upTeams.length>0&&<span style={{marginLeft:10,color:"var(--text3)"}}>then: {upTeams.join(", ")}</span>}
+                          {picksAway>0&&(
+                            <span style={{marginLeft:10,fontWeight:700,
+                              color:picksAway<=3?"var(--warn)":picksAway<=6?"var(--text2)":"var(--text3)"}}>
+                              · {picksAway} {picksAway===1?"pick":"picks"} away
+                            </span>
+                          )}
+                        </>
+                      );
+                    }
+                  })()}
+                </div>
+                <div className="needs-row">
+                  {["QB","RB","WR","TE"].map(pos=>{
+                    const have=myPosCounts[pos]||0;
+                    const need=rosterSlots[pos]||0;
+                    if(need===0)return null;
+                    const full=have>=need;
+                    return(
+                      <span key={pos} className={`need-chip${full?" filled":""}`}>
+                        <span className={`pb ${pos}`} style={{fontSize:9,padding:"1px 4px"}}>{pos}</span>
+                        <span style={{fontSize:11}}>{have}/{need}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexDirection:"column"}}>
+                {mode==="mock"&&!isMyTurn&&!isSimming&&(
+                  <button className="hot" onClick={runSim}
+                    style={{padding:"11px 26px",fontSize:15,fontWeight:800}}>
+                    Sim to my pick →
+                  </button>
+                )}
+                {isSimming&&(
+                  <button className="ghost" onClick={()=>{clearTimeout(simRef.current);setIsSimming(false)}}
+                    style={{fontSize:12,border:"1px solid var(--border2)"}}>Stop</button>
+                )}
+                <button className="ghost" onClick={()=>setTradeModal(true)}
+                  style={{fontSize:11,padding:"4px 10px",borderColor:"var(--border2)"}}>
+                  ↔ Trade pick
+                </button>
+              </div>
+            </div>
+          )}
+          {done&&(
+            <div style={{
+              background:"var(--s1)",border:"1px solid var(--mag-border)",borderRadius:"var(--rl)",
+              padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",gap:12,
+              boxShadow:"0 0 32px rgba(232,54,110,0.08)"
+            }}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:18,
+                textTransform:"uppercase",letterSpacing:"0.04em",color:"var(--teal)"}}>
+                🏈 Draft Complete — Loading results…
+              </div>
+            </div>
+          )}
+
+          <div className="tabs">
+            {[["available","Available"],["board","Draft Board"],["rosters","Rosters"],["myteam",myTeam+"'s Team"]].map(([id,lbl])=>(
+              <button key={id} className={`tab${draftTab===id?" on":""}`} onClick={()=>setDraftTab(id)}>{lbl}</button>
+            ))}
+          </div>
+
+          {draftTab==="available"&&(
+            <>
+              {/* General draft notes */}
+              <div style={{background:"var(--s1)",border:"1px solid var(--border)",
+                borderRadius:"var(--rl)",marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                  padding:"10px 16px",cursor:"pointer",userSelect:"none"}}
+                  onClick={()=>setNotesOpen(o=>!o)}>
+                  <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",
+                    letterSpacing:"0.1em",color:generalNotes?"var(--teal)":"var(--text3)"}}>
+                    Draft Notes {generalNotes&&"✎"}
+                  </span>
+                  <span style={{fontSize:12,color:"var(--text3)"}}>{notesOpen?"▲":"▼"}</span>
+                </div>
+                {notesOpen&&(
+                  <div style={{padding:"0 16px 14px"}}>
+                    <textarea
+                      value={generalNotes}
+                      onChange={e=>setGeneralNotes(e.target.value)}
+                      placeholder="Jot down strategy, targets, tiers, anything…"
+                      style={{width:"100%",minHeight:100,fontSize:12,padding:"8px 10px",
+                        borderRadius:6,background:"var(--s2)",border:"1px solid var(--border2)",
+                        color:"var(--text)",fontFamily:"inherit",resize:"vertical",lineHeight:1.6}}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="queue-panel">
+                <div className="queue-head" onClick={()=>setQueueOpen(o=>!o)}>
+                  <span className="best-avail-title">
+                    My Queue
+                    {queue.filter(n=>!drafted.has(n)).length>0&&(
+                      <span style={{marginLeft:8,background:"var(--mag)",color:"#fff",
+                        borderRadius:10,padding:"1px 7px",fontSize:10,fontWeight:800}}>
+                        {queue.filter(n=>!drafted.has(n)).length}
+                      </span>
+                    )}
+                  </span>
+                  <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                    <button className="ghost" style={{fontSize:11,padding:"2px 8px"}}
+                      onClick={e=>{e.stopPropagation();
+                        const name=selPlayer?.name;
+                        if(name&&!queue.includes(name))setQueue(q=>[...q,name]);
+                        setSelPlayer(null);
+                      }}
+                      title="Add selected player to queue">
+                      + Add selected
+                    </button>
+                    <span style={{fontSize:12,color:"var(--text3)"}}>{queueOpen?"▲":"▼"}</span>
+                  </div>
+                </div>
+                {queueOpen&&(
+                  <QueueList queue={queue} setQueue={setQueue} drafted={drafted}
+                    canPick={!done&&(mode==="live"||isMyTurn)} onPick={p=>{
+                      const pl=players.find(x=>x.name===p);
+                      if(pl){recordPick(pl);setQueue(q=>q.filter(n=>n!==p));}
+                    }}/>
+                )}
+              </div>
+
+              <AvailPanel avail={avail} filterPos={filterPos} setFilterPos={setFilterPos}
+                search={search} setSearch={setSearch} selPlayer={selPlayer} setSelPlayer={setSelPlayer}
+                canPick={!done&&(mode==="live"||isMyTurn)} curTeam={curTeam} mode={mode} onPick={p=>{
+                  recordPick(p);setQueue(q=>q.filter(n=>n!==p.name));
+                }}
+                survival={survival} lastPick={lastPick} isSimming={isSimming}
+                playerNotes={playerNotes} setPlayerNotes={setPlayerNotes}
+                queue={queue} setQueue={setQueue}
+              />
+            </>
+          )}
+          {draftTab==="board"&&(
+            <LiveBoard order={order} picks={picks} teams={teams} myIdx={myIdx}
+              numRounds={numRounds} currentPickIdx={currentPickIdx} tradedPicks={tradedPicks}
+              players={players} drafted={drafted}
+              onEditPick={(overall,newPlayer)=>{
+                if(newPlayer===null){
+                  // un-assign: remove pick
+                  setPicks(p=>{const n={...p};delete n[overall];return n;});
+                } else {
+                  setPicks(p=>({...p,[overall]:newPlayer}));
+                }
+              }}
+            />
+          )}
+          {draftTab==="rosters"&&<RostersTab teams={teams} rosters={rosters} myTeam={myTeam}/>}
+          {draftTab==="myteam"&&<RosterView roster={rosters[myTeam]||[]} showCounts/>}
+
+          {snarkMsg&&(
+            <div className="overlay" onClick={()=>setSnarkMsg(null)}>
+              <div style={{background:"var(--s1)",border:"2px solid var(--mag-border)",
+                borderRadius:"var(--rxl)",padding:"32px 36px",maxWidth:380,textAlign:"center",
+                boxShadow:"0 24px 80px rgba(232,54,110,0.3)"}} onClick={e=>e.stopPropagation()}>
+                <div style={{fontSize:28,marginBottom:10}}>😬</div>
+                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20,
+                  textTransform:"uppercase",letterSpacing:"0.04em",color:"var(--mag)",marginBottom:10}}>
+                  {snarkTitleText}
+                </div>
+                <div style={{fontSize:15,color:"var(--text)",lineHeight:1.5,marginBottom:20}}>
+                  "{snarkMsg}"
+                </div>
+                <button className="hot" onClick={()=>setSnarkMsg(null)}
+                  style={{padding:"9px 28px",fontSize:13,fontWeight:800}}>
+                  I regret nothing
+                </button>
+              </div>
+            </div>
+          )}
+          {/* Feature 9: Mid-draft trade modal (outside layout columns, still in draft-page) */}
+          {tradeModal&&(
+            <div className="overlay" onClick={()=>setTradeModal(false)}>
+              <div className="trade-modal" onClick={e=>e.stopPropagation()}>
+                <div className="modal-title">Trade a Pick</div>
+                <div className="modal-sub" style={{marginBottom:18}}>
+                  Reassign any future pick to a different team. Stacks with pre-draft trades.
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <div className="frow">
+                    <label>Pick</label>
+                    <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                      <select value={tradePick.split(".")[0]||""}
+                        onChange={e=>{
+                          const r=e.target.value;
+                          const pos=tradePick.split(".")[1]||"01";
+                          setTradePick(r?`${r}.${pos}`:"");
+                        }}
+                        style={{width:100}}>
+                        <option value="">Round…</option>
+                        {Array.from({length:numRounds},(_,i)=>i+1).map(r=>(
+                          <option key={r} value={r}>Round {r}</option>
+                        ))}
+                      </select>
+                      <span style={{color:"var(--text3)"}}>.</span>
+                      <select value={tradePick.split(".")[1]||""}
+                        onChange={e=>{
+                          const r=tradePick.split(".")[0]||"";
+                          setTradePick(r?`${r}.${e.target.value}`:"");
+                        }}
+                        style={{width:100}}>
+                        <option value="">Pick…</option>
+                        {Array.from({length:teams.length},(_,i)=>String(i+1).padStart(2,"0")).map(p=>(
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {(()=>{
+                      const parts=tradePick.split(".");
+                      if(parts.length!==2||!parts[0]||!parts[1])return null;
+                      const r=parseInt(parts[0]),pos=parseInt(parts[1]);
+                      // Find the pick with this round + pick-within-round in the effective order
+                      const roundPicks=order.filter(p=>p.round===r);
+                      // snake: odd rounds forward, even rounds reverse
+                      const sorted=r%2===1?[...roundPicks].sort((a,b)=>a.overall-b.overall):[...roundPicks].sort((a,b)=>b.overall-a.overall);
+                      const slot=sorted[pos-1];
+                      if(!slot)return<span style={{fontSize:11,color:"var(--warn)"}}>Pick not found</span>;
+                      if(picks[slot.overall])return<span style={{fontSize:11,color:"var(--warn)"}}>Already used (#{slot.overall})</span>;
+                      // Store the overall# internally
+                      if(tradePick!==String(slot.overall)){
+                        // use effect-like: just record the overall pick number
+                        setTimeout(()=>setTradePick(`${r}.${parts[1]}_${slot.overall}`),0);
+                      }
+                      return<span style={{fontSize:11,color:"var(--text3)"}}>
+                        Overall #{slot.overall} · currently owned by {teams[slot.teamIdx]}
+                      </span>;
+                    })()}
+                  </div>
+                  <div className="frow">
+                    <label>Send to team</label>
+                    <select value={tradeTeam} onChange={e=>setTradeTeam(e.target.value)}>
+                      <option value="">Select team…</option>
+                      {teams.map(t=><option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:8,marginTop:20,justifyContent:"flex-end"}}>
+                  <button className="ghost" onClick={()=>setTradeModal(false)}>Cancel</button>
+                  <button className="primary" onClick={applyMidDraftTrade}
+                    disabled={!tradePick||!tradeTeam}>Apply Trade</button>
+                </div>
+              </div>
+            </div>
+          )}
+            </div>{/* end draft-main */}
+
+            {/* ── Roster sidebar — hidden on board tab ── */}
+            {draftTab!=="board"&&(
+            <div className="draft-sidebar">
+              {/* My team — always at top */}
+              <div className="sb-my-team-panel">
+                <div className="sidebar-title" style={{color:"var(--mag)",marginBottom:8}}>
+                  {myTeam}
+                  <span style={{fontWeight:500,color:"var(--text3)",fontSize:9,marginLeft:6,textTransform:"none",letterSpacing:0}}>
+                    {myRoster.length}/{numRounds}
+                  </span>
+                </div>
+                {(()=>{
+                  // Show slots in order: QB, RB×n, WR×n, TE, FLEX, BN×n
+                  const POS_ORDER=[
+                    ...Array(rosterSlots.QB||1).fill("QB"),
+                    ...Array(rosterSlots.RB||2).fill("RB"),
+                    ...Array(rosterSlots.WR||3).fill("WR"),
+                    ...Array(rosterSlots.TE||1).fill("TE"),
+                    ...Array(rosterSlots.FLEX||1).fill("FLEX"),
+                    ...Array(rosterSlots.BN||5).fill("BN"),
+                  ];
+                  // Assign drafted players to slots greedily (earliest pick first)
+                  const sorted=[...myRoster].sort((a,b)=>a.pickNum-b.pickNum);
+                  const assigned=[];
+                  const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0,BN:0};
+                  const flexElig=new Set(["RB","WR","TE"]);
+                  for(const p of sorted){
+                    const pos=p.pos;
+                    const slotMax=rosterSlots[pos]||0;
+                    if(counts[pos]<slotMax){counts[pos]++;assigned.push({...p,slotLabel:pos});}
+                    else if(flexElig.has(pos)&&counts.FLEX<(rosterSlots.FLEX||0)){counts.FLEX++;assigned.push({...p,slotLabel:"FLEX"});}
+                    else{counts.BN++;assigned.push({...p,slotLabel:"BN"});}
+                  }
+                  const posColors={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)",BN:"var(--text3)"};
+                  return POS_ORDER.map((slot,i)=>{
+                    const player=assigned.find(p=>p.slotLabel===slot&&!POS_ORDER.slice(0,i).some((_,j)=>POS_ORDER[j]===slot&&assigned.filter(p=>p.slotLabel===slot).indexOf(p)<=POS_ORDER.slice(0,j+1).filter(s=>s===slot).length-1));
+                    // Simpler: just render slots in order, matching assigned array
+                    const slotPlayers=assigned.filter(p=>p.slotLabel===slot);
+                    const slotIdx=POS_ORDER.slice(0,i).filter(s=>s===slot).length;
+                    const p=slotPlayers[slotIdx];
+                    return(
+                      <div key={i} className="sb-my-player">
+                        <span className={`sb-slot-label${p?" filled":""}`}
+                          style={{color:p?posColors[slot]:"var(--border2)"}}>
+                          {slot}
+                        </span>
+                        {p?(
+                          <>
+                            <span className="sb-player-name" title={p.name}>
+                              {lastName(p.name)}
+                            </span>
+                            <span className="sb-player-round">R{p.round}</span>
+                          </>
+                        ):(
+                          <span style={{fontSize:10,color:"var(--border2)",fontStyle:"italic"}}>empty</span>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* All teams summary */}
+              <div className="sidebar-title">All Teams</div>
+              {teams.map(t=>{
+                const r=rosters[t]||[];
+                const byPos={QB:0,RB:0,WR:0,TE:0,K:0,DST:0};
+                r.forEach(p=>{if(byPos[p.pos]!==undefined)byPos[p.pos]++;});
+                const isMe=t===myTeam;
+                return(
+                  <div key={t} className={`sb-team${isMe?" sb-mine":""}`}>
+                    <div className="sb-name">{t}
+                      <span className="sb-count">{r.length}</span>
+                    </div>
+                    <div className="sb-pos-row">
+                      {["QB","RB","WR","TE"].map(pos=>byPos[pos]>0&&(
+                        <span key={pos} className={`pb ${pos}`}
+                          style={{fontSize:9,padding:"1px 5px"}}>
+                          {pos}{byPos[pos]>1?<sup style={{fontSize:8}}>{byPos[pos]}</sup>:""}
+                        </span>
+                      ))}
+                      {r.length===0&&<span style={{fontSize:10,color:"var(--text3)"}}>—</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            )}
+          </div>{/* end draft-layout */}
+        </div>
+      )}
+
+      {/* ── Results screen ── */}
+      {screen==="results"&&(
+        <ResultsPage
+          teams={teams} rosters={rosters} myTeam={myTeam}
+          picks={picks} order={order} rosterSlots={rosterSlots}
+          isFriends={myTeam!=="Yonni"}
+          onDraftAgain={()=>{
+            clearTimeout(simRef.current);
+            setPicks({});setCurrentPickIdx(0);setIsSimming(false);
+            setLastPick(null);setSelPlayer(null);setSearch("");setFilterPos("ALL");
+            setScreen("setup");setSetupTab("board");
+          }}
+          onExportCSV={exportCSV}
+        />
+      )}
+
+      {/* ── Walkthrough ── */}
+      {!walkthroughDone&&<Walkthrough
+        onDone={(dontShow)=>{
+          if(dontShow)localStorage.setItem("wreckineyez-wt","1");
+          setWalkthroughDone(true);
+        }}
+        setSetupTab={setSetupTab}
+        screen={screen}
+      />}
+    </>
+  );
+}
+
+/* ── Results Page ── */
+function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,rosterSlots,isFriends}){
+  const[focus,setFocus]=useState(null);
+  const canvasRef=useRef(null);
+  const[grade]=useState(()=>isFriends?fakeGrade():null);
+  const[standings]=useState(()=>isFriends?fakeStandings(teams,myTeam):null);
+
+  // Assign players to roster slots in draft order, bench = overflow
+  function assignSlots(roster){
+    // Sort by pick order (earliest first)
+    const byPick=[...roster].sort((a,b)=>a.pickNum-b.pickNum);
+    const slots=[];
+    const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0};
+    const flexEligible=new Set(["RB","WR","TE"]);
+    const benched=[];
+
+    for(const p of byPick){
+      const pos=p.pos;
+      const slotMax=rosterSlots[pos]||0;
+      const flexMax=rosterSlots.FLEX||0;
+      if(counts[pos]<slotMax){
+        counts[pos]++;
+        slots.push({...p,slotLabel:pos});
+      } else if(flexEligible.has(pos)&&counts.FLEX<flexMax){
+        counts.FLEX++;
+        slots.push({...p,slotLabel:"FLEX"});
+      } else {
+        benched.push({...p,slotLabel:"BN"});
+      }
+    }
+    // Sort starters by position priority
+    const PRI={QB:0,RB:1,WR:2,TE:3,FLEX:4};
+    slots.sort((a,b)=>(PRI[a.slotLabel]??9)-(PRI[b.slotLabel]??9)||a.pickNum-b.pickNum);
+    return{starters:slots,bench:benched};
+  }
+
+  function copyRosterImage(teamName){
+    const {starters,bench}=assignSlots(rosters[teamName]||[]);
+    const allRows=[...starters,{slotLabel:"__divider__"},{...{name:"BENCH",pos:"",slotLabel:"BN",pickNum:999}},...bench.filter((_,i)=>i>0),...(bench.length?[{...bench[0],slotLabel:"BN"}]:[])];
+    // Simpler: just render starters then bench
+    const rows=[...starters,...bench];
+    const W=480,ROW=26,PAD=18,HEADER=56,FOOTER=28,DIVIDER=20;
+    const H=HEADER+starters.length*ROW+DIVIDER+bench.length*ROW+PAD+FOOTER;
+    const canvas=canvasRef.current;
+    canvas.width=W;canvas.height=H;
+    const ctx=canvas.getContext("2d");
+    ctx.fillStyle="#0B0B14";ctx.fillRect(0,0,W,H);
+    const grad=ctx.createLinearGradient(0,0,W,0);
+    grad.addColorStop(0,"#8B5CF6");grad.addColorStop(0.5,"#E8366E");grad.addColorStop(1,"#00C8C0");
+    ctx.fillStyle=grad;ctx.fillRect(0,0,W,4);
+    ctx.fillStyle="#F0EDE8";ctx.font="bold 22px 'Arial Black', sans-serif";
+    ctx.textBaseline="top";ctx.fillText(teamName.toUpperCase(),PAD,14);
+    ctx.fillStyle="#5A5868";ctx.font="12px Arial, sans-serif";
+    ctx.fillText(`${rows.length} players`,PAD,40);
+    const posColors={QB:"#FACC15",RB:"#00C8C0",WR:"#A78BFA",TE:"#F472B6",FLEX:"#CBD5E1",BN:"#5A5868"};
+    let y=HEADER;
+    const drawRow=(p,isBench,rowIdx)=>{
+      if(rowIdx%2===0){ctx.fillStyle="rgba(255,255,255,0.025)";ctx.fillRect(0,y-2,W,ROW);}
+      const pc=posColors[p.slotLabel]||"#9896A8";
+      const slotW=36;
+      ctx.fillStyle=pc+"28";ctx.beginPath();ctx.roundRect(PAD,y+1,slotW,ROW-6,3);ctx.fill();
+      ctx.fillStyle=isBench?"#5A5868":pc;ctx.font="bold 10px Arial, sans-serif";
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText(p.slotLabel,PAD+slotW/2,y+ROW/2);
+      ctx.textAlign="left";
+      ctx.fillStyle=isBench?"#5A5868":"#F0EDE8";ctx.font="bold 13px Arial, sans-serif";
+      ctx.textBaseline="middle";ctx.fillText(p.name,PAD+slotW+8,y+ROW/2);
+      ctx.fillStyle="#5A5868";ctx.font="11px Arial, sans-serif";
+      ctx.textAlign="right";ctx.fillText(`R${p.round}`,W-PAD,y+ROW/2);
+      ctx.textAlign="left";
+      y+=ROW;
+    };
+    starters.forEach((p,i)=>drawRow(p,false,i));
+    if(bench.length){
+      ctx.fillStyle="#222236";ctx.fillRect(0,y,W,DIVIDER);
+      ctx.fillStyle="#5A5868";ctx.font="bold 10px Arial, sans-serif";
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText("BENCH",W/2,y+DIVIDER/2);ctx.textAlign="left";
+      y+=DIVIDER;
+      bench.forEach((p,i)=>drawRow(p,true,i));
+    }
+    ctx.fillStyle="#5A5868";ctx.font="11px Arial, sans-serif";
+    ctx.textBaseline="bottom";ctx.fillText("Wreckineyez Mock Draft",PAD,H-6);
+    canvas.toBlob(blob=>{
+      if(!blob)return;
+      navigator.clipboard.write([new ClipboardItem({"image/png":blob})])
+        .then(()=>alert(`${teamName}'s roster copied to clipboard!`))
+        .catch(()=>{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`${teamName}-roster.png`;a.click();});
+    },"image/png");
+  }
+
+  const posShortCounts=(roster)=>{
+    const c={QB:0,RB:0,WR:0,TE:0};
+    roster.forEach(p=>{if(c[p.pos]!==undefined)c[p.pos]++;});
+    return c;
+  };
+
+  const POS_ORDER=["QB","RB","WR","TE","K","DST","FLEX"];
+  function sortRoster(roster){
+    return [...roster].sort((a,b)=>{
+      const pi=POS_ORDER.indexOf(a.pos),qi=POS_ORDER.indexOf(b.pos);
+      if(pi!==qi)return(pi<0?99:pi)-(qi<0?99:qi);
+      return a.pickNum-b.pickNum;
+    });
+  }
+
+  return(
+    <div className="page results-page">
+      <canvas ref={canvasRef} id="roster-canvas"/>
+
+      <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",
+        marginBottom:isFriends?18:24,flexWrap:"wrap",gap:12}}>
+        <div>
+          <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:36,
+            textTransform:"uppercase",letterSpacing:"0.04em",lineHeight:1}}>
+            <span style={{color:"var(--teal)"}}>🏈</span> Draft Complete
+          </div>
+          <div style={{fontSize:13,color:"var(--text3)",marginTop:6}}>
+            {Object.keys(picks).length} picks · {teams.length} teams
+          </div>
+        </div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <button onClick={onExportCSV} style={{fontSize:12,padding:"8px 16px"}}>⬇ Export CSV</button>
+          <button className="hot" onClick={onDraftAgain} style={{fontSize:13,padding:"9px 20px",fontWeight:800}}>
+            Draft Again →
+          </button>
+        </div>
+      </div>
+
+      {isFriends&&grade&&(
+        <div style={{background:"var(--s1)",border:"2px solid var(--mag-border)",
+          borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20,
+          display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
+          <div style={{textAlign:"center",minWidth:80}}>
+            <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,
+              fontSize:72,lineHeight:1,color:"var(--mag)"}}>{grade}</div>
+            <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",
+              letterSpacing:"0.08em",color:"var(--text3)"}}>Draft Grade</div>
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:6}}>
+              {grade==="F-"?"Historically bad draft. Truly."
+                :grade==="F"?"Not great. Not great at all."
+                :grade==="D-"?"Some concerning choices were made today."
+                :"Participation award: issued."}
+            </div>
+            <div style={{fontSize:12,color:"var(--text3)",lineHeight:1.6}}>
+              Our proprietary draft grading algorithm — trained on thousands of drafts, incapable of
+              bias, and completely indifferent to your feelings — has reviewed your selections. This is its verdict.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isFriends&&standings&&(
+        <div style={{background:"var(--s1)",border:"1px solid var(--border)",
+          borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20}}>
+          <div style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",
+            color:"var(--text3)",marginBottom:14}}>Projected Season Standings</div>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {standings.map((row,i)=>(
+              <div key={row.team} style={{display:"flex",alignItems:"center",gap:10,
+                padding:"7px 12px",borderRadius:"var(--r)",
+                background:row.isYonni?"var(--teal-dim)":row.isYou?"var(--mag-dim)":"var(--s2)",
+                border:row.isYonni?"1px solid var(--teal-border)":row.isYou?"1px solid var(--mag-border)":"1px solid transparent"}}>
+                <span style={{fontSize:11,fontWeight:700,color:"var(--text3)",width:22,textAlign:"center"}}>{i+1}</span>
+                <span style={{flex:1,fontSize:13,fontWeight:row.isYonni||row.isYou?700:500,
+                  color:row.isYonni?"var(--teal)":row.isYou?"var(--mag)":"var(--text)"}}>
+                  {row.team}
+                  {row.isYonni&&<span style={{fontSize:10,marginLeft:6,color:"var(--teal)"}}>🏆 The Champ</span>}
+                  {row.isYou&&<span style={{fontSize:10,marginLeft:6,color:"var(--mag)"}}>← you</span>}
+                </span>
+                <span style={{fontSize:12,fontWeight:600,color:"var(--text2)",fontVariantNumeric:"tabular-nums"}}>
+                  {row.w}–{row.l}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{fontSize:11,color:"var(--text3)",marginTop:10,fontStyle:"italic"}}>
+            * Projections generated by advanced analytics. Results may vary. Okay, they definitely will for you.
+          </div>
+        </div>
+      )}
+
+      {/* Focus: single team expanded view */}
+      {focus&&(()=>{
+        const {starters,bench}=assignSlots(rosters[focus]||[]);
+        const isMe=focus===myTeam;
+        const SlotRow=({p,isBench})=>(
+          <div style={{display:"flex",alignItems:"center",gap:10,
+            padding:"8px 12px",borderRadius:"var(--r)",
+            background:isBench?"var(--s2)":"var(--s2)",
+            borderLeft:`3px solid ${isBench?"var(--border2)":
+              p.slotLabel==="QB"?"#FACC15":p.slotLabel==="RB"?"var(--teal)":
+              p.slotLabel==="WR"?"var(--purp)":p.slotLabel==="TE"?"#F472B6":
+              p.slotLabel==="FLEX"?"var(--text2)":"var(--border2)"}`}}>
+            <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",
+              letterSpacing:"0.06em",width:34,flexShrink:0,
+              color:isBench?"var(--text3)":
+                p.slotLabel==="QB"?"#FACC15":p.slotLabel==="RB"?"var(--teal)":
+                p.slotLabel==="WR"?"var(--purp)":p.slotLabel==="TE"?"#F472B6":
+                p.slotLabel==="FLEX"?"var(--text2)":"var(--text3)"}}>
+              {p.slotLabel}
+            </span>
+            <span style={{fontWeight:600,fontSize:13,flex:1,
+              overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+              color:"var(--text)"}}>
+              {p.name}
+            </span>
+            <span style={{fontSize:11,color:"var(--text3)",flexShrink:0}}>R{p.round}</span>
+          </div>
+        );
+        return(
+          <div style={{background:"var(--s1)",border:`1px solid ${isMe?"var(--mag-border)":"var(--border2)"}`,
+            borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:24}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+              marginBottom:16,flexWrap:"wrap",gap:10}}>
+              <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:24,
+                textTransform:"uppercase",letterSpacing:"0.04em",
+                color:isMe?"var(--mag)":"var(--text)"}}>
+                {focus}{isMe&&<span style={{fontSize:13,fontWeight:600,marginLeft:8,
+                  color:"var(--mag)",letterSpacing:0}}>· Your team</span>}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>copyRosterImage(focus)} style={{fontSize:12,padding:"7px 14px"}}>
+                  📋 Copy as image
+                </button>
+                <button className="ghost" onClick={()=>setFocus(null)} style={{fontSize:12}}>✕ Close</button>
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:3,width:"fit-content",minWidth:340,margin:"0 auto"}}>
+              {starters.map(p=><SlotRow key={p.pickNum} p={p} isBench={false}/>)}
+            </div>
+            {bench.length>0&&(
+              <>
+                <div style={{margin:"12px auto 8px",display:"flex",alignItems:"center",gap:10,
+                  width:"fit-content",minWidth:340}}>
+                  <div style={{flex:1,height:1,background:"var(--border2)",minWidth:60}}/>
+                  <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",
+                    letterSpacing:"0.1em",color:"var(--text3)"}}>Bench</span>
+                  <div style={{flex:1,height:1,background:"var(--border2)",minWidth:60}}/>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:3,width:"fit-content",minWidth:340,margin:"0 auto"}}>
+                  {bench.map(p=><SlotRow key={p.pickNum} p={p} isBench={true}/>)}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* All teams grid */}
+      <div className="results-grid">
+        {teams.map(t=>{
+          const roster=rosters[t]||[];
+          const counts=posShortCounts(roster);
+          const isMe=t===myTeam;
+          const sorted=sortRoster(roster);
+          return(
+            <div key={t} className={`res-card${isMe?" mine":""}`}
+              onClick={()=>setFocus(focus===t?null:t)}>
+              <div className="res-card-name" style={{color:isMe?"var(--mag)":"var(--text)"}}>
+                {t}
+                {isMe&&<span style={{fontSize:10,fontWeight:600,marginLeft:6,
+                  color:"var(--mag)",letterSpacing:0,textTransform:"none"}}>you</span>}
+              </div>
+              <div className="res-pos-row">
+                {["QB","RB","WR","TE"].map(pos=>counts[pos]>0&&(
+                  <span key={pos} className={`pb ${pos}`} style={{fontSize:9,padding:"2px 5px"}}>
+                    {pos}×{counts[pos]}
+                  </span>
+                ))}
+              </div>
+              <div className="res-players">
+                {sorted.slice(0,5).map(p=>(
+                  <div key={p.pickNum} className="res-player-row">
+                    <span className={`pb ${p.pos}`} style={{fontSize:8,padding:"1px 4px",flexShrink:0}}>{p.pos}</span>
+                    <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</span>
+                  </div>
+                ))}
+                {roster.length>5&&(
+                  <div style={{color:"var(--text3)",fontSize:10,marginTop:2}}>
+                    +{roster.length-5} more · click to expand
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Walkthrough ── */
+/* ── Snarky / friends features (active when drafting as non-Yonni) ── */
+const SNARKY=[
+  "Really? That guy?!","Bold strategy. Let's see if it pays off. (It won't.)",
+  "Yonni would never.","Did you just... draft with your eyes closed?",
+  "That pick is going straight to IR, you know that right?",
+  "Someone had to take him. Brave of you.","I've seen better picks in a nose.",
+  "The chat is going to love this one.","Are you okay? Do you need help?",
+  "That player's agent called. They said thanks for the charity.",
+  "Interesting. Very interesting. Wrong, but interesting.",
+  "Bold pick from someone who clearly doesn't watch football.",
+  "Your team mascot is now a participation trophy.",
+  "Somewhere, a fantasy football expert just shed a single tear.",
+  "I respect the confidence. Not the pick, just the confidence.",
+  "Your team is building character. Lots and lots of character.",
+  "That pick is why mock drafts exist. So you can practice NOT doing that.",
+  "Don't worry, every great team has one terrible pick. You have several.",
+  "The waiver wire called. It wants its player back.",
+  "Your opponents are sending you a thank you card.",
+  "Have you considered basketball? Just asking.",
+  "On behalf of everyone in the league: wow.",
+  "I'm not saying it's a bad pick. I'm just not saying it's a good one either.",
+  "Your team depth chart is now a cry for help.",
+  "This pick has been flagged by the Committee on Fantasy Football Decisions.",
+  "Sir, this is a Wendy's.","That guy is one hamstring tweak from your bench. Forever.",
+  "Classic panic pick. We've all been there. Most of us recover.",
+  "Your fantasy team would like to speak with the manager.",
+  "Groundbreaking. Truly unique. Not in a good way.",
+  "The algorithm would like to ask you a few questions.",
+  "Your team's projected points just filed for emotional support.",
+  "I admire the chaos. I do not admire the outcome.",
+  "Pick of the year. For the other team.",
+  "That player has three first names and zero top-12 weeks. Good luck.",
+  "Yonni's watching this and smiling.","You could have had anyone. You chose... that.",
+  "Fantasy football is a game of skill. This was darts. Blindfolded.",
+  "History will remember this. Mostly as a cautionary tale.",
+  "Breaking: Local manager makes questionable life choice.",
+  "The autopick would have done better.",
+  "I've seen better roster construction from a coin flip.",
+  "That position was already stacked. On your team. Concerningly.",
+  "Reach of the century. We'll talk about this for years.",
+  "Your team has a vibe. It's not a winning vibe.",
+  "Incredible. Truly terrible. Could not be more impressed.",
+  "Your starting lineup just texted asking to be traded.",
+  "Every pick tells a story. Yours is a tragedy.",
+  "You passed on three elite options for THAT. Respect the commitment.",
+  "The fantasy gods have logged this pick as evidence.",
+  "A bold choice from someone with so little to lose.",
+  "This pick is why there are rebuild seasons.",
+];
+const SNARK_TITLES=[
+  "⚠️ Bad Pick Alert","🚨 Pick Emergency","😬 Yikes.","🔴 Pick Review Required",
+  "📋 Pick Assessment","❗ Questionable Decision Detected","🧐 Pick Audit",
+  "📣 Public Service Announcement","🚑 Fantasy First Aid Needed",
+];
+const FAKE_GRADES=["D","D-","F","F-"];
+function snarkMessage(){return SNARKY[Math.floor(Math.random()*SNARKY.length)];}
+function snarkTitle(){return SNARK_TITLES[Math.floor(Math.random()*SNARK_TITLES.length)];}
+function fakeGrade(){return FAKE_GRADES[Math.floor(Math.random()*FAKE_GRADES.length)];}
+function fakeStandings(teams,myTeam){
+  const others=teams.filter(t=>t!==myTeam&&t!=="Yonni");
+  for(let i=others.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[others[i],others[j]]=[others[j],others[i]];}
+  const ordered=["Yonni",...others,myTeam];
+  const n=ordered.length;
+  return ordered.map((t,i)=>{
+    const base=Math.round(13-i*(13/(n-1)));
+    const w=Math.min(13,Math.max(0,base+Math.round((Math.random()-0.5)*1.5)));
+    return{team:t,w,l:14-w,isYou:t===myTeam,isYonni:t==="Yonni"};
+  });
+}
+
+const WT_STEPS=[
+  {
+    tab:null, target:null,
+    title:"Welcome to Wreckineyez 🏈",
+    body:"Your fantasy football mock draft simulator. Run as many practice drafts as you want before the real thing. This quick tour walks through each part of the app.",
+    hl:[],
+  },
+  {
+    tab:"rankings", target:"fetch-ecr",
+    title:"Step 1 — Rankings",
+    body:"Rankings load automatically from a shared file when the app opens. Click Reload rankings any time to refresh, or load a CSV manually as a backup.",
+    hl:["Reload rankings"],
+  },
+  {
+    tab:"settings", target:"my-team",
+    title:"Step 2 — Pick Your Team",
+    body:"Select your team from the Your team dropdown — that's who you'll draft for. Every other team will be drafted by the CPU in mock mode.",
+    hl:["Your team"],
+  },
+  {
+    tab:"settings", target:null,
+    title:"Step 3 — Other Settings",
+    body:"Below your team selector you can set Draft mode (mock vs live), adjust roster slots (already set for your league), and tune League tendencies — how aggressively the CPU reaches for each position.",
+    hl:["Draft mode","roster slots","League tendencies"],
+  },
+  {
+    tab:"board", target:null,
+    title:"Step 4 — Keepers & Trades",
+    body:"The Draft Board shows the full pick order. Click any cell to set a keeper (green) or reassign a traded pick (orange) — the label shows who receives it. These settings, along with all your notes, save automatically between sessions.",
+    hl:["keeper","traded"],
+  },
+  {
+    tab:null, target:"start-draft",
+    title:"Step 5 — Start the Draft",
+    body:"Once rankings are loaded, the Start Draft button appears in the top-right corner of the header. Click it when you're ready to begin.",
+    hl:["Start Draft"],
+  },
+  {
+    tab:null, target:null,
+    title:"Step 6 — Simming & Picking",
+    body:"During the draft, hit Sim to my pick → to let the CPU draft for everyone until your turn. When it's your pick, click any player to select them, then click Pick ✓ to draft. The Availability bar shows the chance they'll still be there.",
+    hl:["Sim to my pick →","Pick ✓","Availability"],
+    preview:[
+      {icon:"▶",label:"Sim to my pick →",color:"var(--mag)"},
+      {icon:"✓",label:"Pick ✓",color:"var(--teal)"},
+    ],
+  },
+  {
+    tab:null, target:null,
+    title:"Step 7 — Queue & Notes",
+    body:"Star any player (☆) to add them to your Queue — a personal watch list you can draft from directly. Use the note field on each row for scouting notes, and Draft Notes (above the queue) for general strategy. Everything saves automatically.",
+    hl:["Queue","Draft Notes"],
+  },
+  {
+    tab:null, target:null,
+    title:"You're all set",
+    body:"That's everything. Run as many mock drafts as you like, try different strategies, and see how your targets fall. Good luck — you'll need it.",
+    hl:[],
+  },
+];
+
+function Walkthrough({onDone,setSetupTab,screen}){
+  const[step,setStep]=useState(0);
+  const[dontShow,setDontShow]=useState(false);
+  const[targetRect,setTargetRect]=useState(null);
+  const[arrowReady,setArrowReady]=useState(false);  // only show arrow after box repositions
+  const stepRef=useRef(0);
+  const boxRef=useRef(null);
+  const total=WT_STEPS.length;
+  const curr=WT_STEPS[step];
+
+  useEffect(()=>{
+    stepRef.current=step;
+    if(curr.tab&&screen==="setup"&&setSetupTab)setSetupTab(curr.tab);
+    // Clear immediately to prevent flash from previous step's rect
+    setTargetRect(null);
+    if(curr.target){
+      const t=setTimeout(()=>{
+        if(stepRef.current!==step)return;
+        const el=document.querySelector(`[data-wt="${curr.target}"]`);
+        if(el){
+          const r=el.getBoundingClientRect();
+          setTargetRect({cx:r.left+r.width/2,cy:r.top+r.height/2,
+            w:r.width,h:r.height,top:r.top,left:r.left});
+        }
+      },180);
+      return()=>clearTimeout(t);
+    }
+    // Step 3: scroll the settings detail cards into view
+    if(step===3){
+      const t2=setTimeout(()=>{
+        const cards=document.querySelectorAll(".card");
+        if(cards.length>1)cards[1].scrollIntoView({behavior:"smooth",block:"start"});
+      },250);
+      return()=>clearTimeout(t2);
+    }
+  },[step]);
+
+  // Arrow only shows after the callout box has moved to its target-based position.
+  // targetRect arriving → box moves → one rAF later → read box position → show arrow.
+  useEffect(()=>{
+    if(!targetRect){setArrowReady(false);return;}
+    // Two rAFs: first lets React commit the new box position, second measures it
+    let id1=requestAnimationFrame(()=>{
+      let id2=requestAnimationFrame(()=>setArrowReady(true));
+      return()=>cancelAnimationFrame(id2);
+    });
+    return()=>cancelAnimationFrame(id1);
+  },[targetRect]);
+
+  function renderBody(text,highlights){
+    if(!highlights||!highlights.length)return text;
+    const escaped=highlights.map(h=>h.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+    const parts=text.split(new RegExp(`(${escaped.join('|')})`));
+    return parts.map((p,i)=>
+      highlights.includes(p)
+        ?React.createElement('strong',{key:i,style:{color:"var(--teal)"}},''+p)
+        :p
+    );
+  }
+
+  function advance(){if(step<total-1)setStep(s=>s+1);else onDone(dontShow);}
+  function back(){if(step>0)setStep(s=>s-1);}
+
+  const vw=typeof window!=="undefined"?window.innerWidth:1200;
+  const vh=typeof window!=="undefined"?window.innerHeight:800;
+  const BOX_W=Math.min(380,vw-32);
+
+  let boxLeft,boxTop;
+  if(targetRect){
+    boxLeft=Math.max(16,Math.min(targetRect.cx-BOX_W/2,vw-BOX_W-16));
+    const spaceBelow=vh-(targetRect.cy+targetRect.h/2);
+    boxTop=spaceBelow>240?targetRect.cy+targetRect.h/2+24:targetRect.cy-targetRect.h/2-300;
+    boxTop=Math.max(70,Math.min(boxTop,vh-320));
+  } else {
+    boxLeft=(vw-BOX_W)/2;
+    boxTop=Math.max(70,(vh-440)/2);
+  }
+
+  // Compute arrow from actual box position (via ref) to target
+  const getArrow=()=>{
+    if(!targetRect||!arrowReady||!boxRef.current)return null;
+    const br=boxRef.current.getBoundingClientRect();
+    const x1=br.left+br.width/2;
+    const y1=targetRect.cy>br.bottom?br.bottom:br.top;
+    const x2=targetRect.cx;
+    const y2=targetRect.cy>br.bottom?targetRect.top-10:targetRect.top+targetRect.h+10;
+    return{x1,y1,x2,y2};
+  };
+  const arrow=getArrow();
+
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:200,pointerEvents:"none"}}>
+      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.62)",pointerEvents:"all"}}
+        onClick={()=>onDone(dontShow)}/>
+
+      {targetRect&&(
+        <svg style={{position:"fixed",inset:0,width:"100%",height:"100%",
+          overflow:"visible",zIndex:201,pointerEvents:"none"}}>
+          <defs>
+            <marker id="wt-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+              <path d="M0,0 L0,6 L9,3 z" fill="#00C8C0"/>
+            </marker>
+          </defs>
+          <rect
+            x={targetRect.left-8} y={targetRect.top-8}
+            width={targetRect.w+16} height={targetRect.h+16}
+            rx="8" fill="none" stroke="#00C8C0" strokeWidth="2.5"
+            style={{filter:"drop-shadow(0 0 8px rgba(0,200,192,0.8))"}}>
+            <animate attributeName="stroke-opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/>
+          </rect>
+          {arrow&&(
+            <line x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2}
+              stroke="#00C8C0" strokeWidth="2.5" strokeDasharray="7,4" opacity="0.9"
+              markerEnd="url(#wt-arr)"/>
+          )}
+        </svg>
+      )}
+
+      <div ref={boxRef} style={{
+        position:"fixed",left:boxLeft,top:boxTop,width:BOX_W,
+        background:"var(--s1)",border:"1px solid var(--border2)",
+        borderRadius:"var(--rxl)",padding:"22px 26px",
+        boxShadow:"0 24px 80px rgba(0,0,0,0.88),0 0 0 1px rgba(0,200,192,0.12)",
+        pointerEvents:"all",zIndex:202,
+      }}>
+        <div style={{display:"flex",gap:3,marginBottom:14}}>
+          {WT_STEPS.map((_,i)=>(
+            <div key={i} onClick={()=>setStep(i)} style={{
+              height:4,borderRadius:2,cursor:"pointer",transition:"all 0.25s",
+              flex:i===step?3:1,
+              background:i===step?"var(--teal)":i<step?"var(--teal-border)":"var(--border2)",
+            }}/>
+          ))}
+        </div>
+
+        {curr.tab&&(
+          <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",
+            color:"var(--teal)",marginBottom:7,display:"flex",alignItems:"center",gap:5}}>
+            <span>↑</span> {curr.tab.charAt(0).toUpperCase()+curr.tab.slice(1)} tab — active
+          </div>
+        )}
+
+        <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:21,
+          textTransform:"uppercase",letterSpacing:"0.04em",color:"var(--text)",marginBottom:9}}>
+          {curr.title}
+        </div>
+
+        <div style={{fontSize:13,color:"var(--text2)",lineHeight:1.7,
+          marginBottom:curr.preview?12:18}}>
+          {renderBody(curr.body,curr.hl)}
+        </div>
+
+        {curr.preview&&(
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+            {curr.preview.map((pv,i)=>(
+              <div key={i} style={{display:"inline-flex",alignItems:"center",gap:6,
+                padding:"6px 12px",borderRadius:"var(--r)",
+                background:"rgba(0,0,0,0.35)",border:`1px solid ${pv.color}44`}}>
+                <span style={{fontSize:16,color:pv.color}}>{pv.icon}</span>
+                <span style={{fontSize:12,fontWeight:700,color:pv.color}}>{pv.label}</span>
+              </div>
+            ))}
+            <span style={{fontSize:11,color:"var(--text3)",alignSelf:"center"}}>— appear during the draft</span>
+          </div>
+        )}
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",
+            fontSize:11,color:"var(--text3)",userSelect:"none"}}>
+            <input type="checkbox" checked={dontShow} onChange={e=>setDontShow(e.target.checked)}
+              style={{cursor:"pointer"}}/>
+            Don't show at startup
+          </label>
+          <div style={{display:"flex",gap:7}}>
+            {step>0&&(
+              <button className="ghost" onClick={back}
+                style={{fontSize:12,padding:"5px 11px"}}>← Back</button>
+            )}
+            <button className="ghost" onClick={()=>onDone(dontShow)}
+              style={{fontSize:11,padding:"5px 10px",color:"var(--text3)"}}>Skip</button>
+            {step<total-1?(
+              <button className="primary" onClick={advance}
+                style={{padding:"6px 16px",fontSize:13,fontWeight:700}}>Next →</button>
+            ):(
+              <button className="hot" onClick={()=>onDone(dontShow)}
+                style={{padding:"6px 16px",fontSize:13,fontWeight:800}}>Let's draft!</button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Queue List ── */
+function QueueList({queue,setQueue,drafted,canPick,onPick}){
+  const dragIdx=useRef(null);
+  const[overIdx,setOverIdx]=useState(null);
+
+  function onDragStart(i){dragIdx.current=i}
+  function onDragOver(e,i){e.preventDefault();setOverIdx(i)}
+  function onDrop(i){
+    if(dragIdx.current===null||dragIdx.current===i){setOverIdx(null);return}
+    const q=[...queue];const[m]=q.splice(dragIdx.current,1);q.splice(i,0,m);
+    setQueue(q);dragIdx.current=null;setOverIdx(null);
+  }
+
+  if(!queue.length)return(
+    <div style={{padding:"10px 4px",fontSize:12,color:"var(--text3)"}}>
+      No players queued. Click a player in the available list then "+ Add selected" above.
+    </div>
+  );
+
+  const available=queue.filter(n=>!drafted.has(n));
+  const taken=queue.filter(n=>drafted.has(n));
+
+  return(
+    <div className="queue-list">
+      {queue.map((name,i)=>{
+        const isDrafted=drafted.has(name);
+        const pos=available.indexOf(name)+1;
+        return(
+          <div key={name}
+            className={`q-item${overIdx===i?" ghost-over":""}${isDrafted?" drafted":""}`}
+            draggable onDragStart={()=>onDragStart(i)}
+            onDragOver={e=>onDragOver(e,i)} onDrop={()=>onDrop(i)}
+            onDragEnd={()=>setOverIdx(null)}>
+            <span className="q-drag">⠿</span>
+            {!isDrafted&&<span className="q-num">{pos}</span>}
+            {isDrafted&&<span style={{fontSize:9,color:"var(--text3)",fontWeight:800,
+              textTransform:"uppercase",minWidth:16}}>✓</span>}
+            <span style={{fontSize:12,fontWeight:isDrafted?500:700,flex:1,
+              textDecoration:isDrafted?"line-through":"none",color:isDrafted?"var(--text3)":"var(--text)"}}>
+              {name}
+            </span>
+            {canPick&&!isDrafted&&(
+              <button className="primary q-draft-btn" onClick={()=>onPick(name)}>
+                Draft
+              </button>
+            )}
+            {isDrafted&&(
+              <span style={{fontSize:10,color:"var(--text3)",marginRight:4}}>taken</span>
+            )}
+            <button className="ghost" style={{padding:"2px 6px",fontSize:14,lineHeight:1,color:"var(--text3)"}}
+              onClick={()=>setQueue(q=>q.filter((_,j)=>j!==i))}>×</button>
+          </div>
+        );
+      })}
+      {taken.length>0&&(
+        <button className="ghost" style={{fontSize:11,marginTop:4,color:"var(--text3)"}}
+          onClick={()=>setQueue(q=>q.filter(n=>!drafted.has(n)))}>
+          Clear taken ({taken.length})
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ── Available panel ── */
+function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,setSelPlayer,
+                     canPick,curTeam,mode,onPick,survival,lastPick,isSimming,
+                     playerNotes,setPlayerNotes,queue,setQueue}){
+
+  const isMobile=useIsMobile();
+  const[noteSheetPlayer,setNoteSheetPlayer]=useState(null); // player name being edited in mobile sheet
+  const[visiblePick,setVisiblePick]=useState(null);
+  const toastRef=useRef(null);
+
+  // Show toast whenever lastPick changes during sim
+  useEffect(()=>{
+    if(!lastPick)return;
+    setVisiblePick(lastPick);
+    clearTimeout(toastRef.current);
+    // Keep it visible until next pick arrives (cleared by next lastPick update)
+    // but always hide after 3s as a safety net
+    toastRef.current=setTimeout(()=>setVisiblePick(null),3000);
+  },[lastPick]);
+
+  // Hide toast once sim stops
+  useEffect(()=>{
+    if(!isSimming){
+      clearTimeout(toastRef.current);
+      setVisiblePick(null);
+    }
+  },[isSimming]);
+
+  const TIERS=[
+    {min:0.85,color:"var(--teal)",  label:"Safe"},
+    {min:0.65,color:"#5BC49A",      label:"Likely"},
+    {min:0.40,color:"var(--warn)",  label:"Risky"},
+    {min:0.18,color:"#D4603A",      label:"Danger"},
+    {min:0,   color:"var(--mag)",   label:"Gone"},
+  ];
+  function tierFor(p){return TIERS.find(t=>p>=t.min)||TIERS[TIERS.length-1];}
+  const showSurvival=survival!=null;
+
+  return(
+    <div>
+      <div style={{display:"flex",gap:10,marginBottom:12,flexWrap:"wrap"}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)}
+          placeholder="Search player or NFL team…" style={{flex:1,minWidth:160}}/>
+        <div className="pills">
+          {POSITIONS.map(p=><button key={p} className={`pill${filterPos===p?" on":""}`} onClick={()=>setFilterPos(p)}>{p}</button>)}
+        </div>
+      </div>
+
+      {/* ── Pick toast ── */}
+      <div style={{
+        height: visiblePick ? 48 : 0,
+        overflow:"hidden",
+        transition:"height 0.18s ease",
+        marginBottom: visiblePick ? 10 : 0,
+      }}>
+        {visiblePick&&(()=>{
+          const pos=visiblePick.player.pos;
+          const t=tierFor(survival?.[visiblePick.player.name]??1);
+          return(
+            <div style={{
+              display:"flex",alignItems:"center",gap:10,
+              padding:"9px 14px",
+              background:"var(--s2)",
+              border:"1px solid var(--border2)",
+              borderLeft:`3px solid ${pos==="QB"?"#FACC15":pos==="RB"?"var(--teal)":pos==="WR"?"var(--purp)":pos==="TE"?"#F472B6":"var(--text3)"}`,
+              borderRadius:"var(--r)",
+              animation:"fadeSlideIn 0.15s ease",
+            }}>
+              <PB pos={visiblePick.player.pos} posRank={visiblePick.player.posRank}/>
+              <span style={{fontWeight:700,fontSize:13}}>{visiblePick.player.name}</span>
+              <span style={{color:"var(--text3)",fontSize:12}}>{visiblePick.player.team}</span>
+              <span style={{marginLeft:"auto",fontSize:11,color:"var(--text3)",fontWeight:600}}>
+                Pick {visiblePick.overall} · {visiblePick.team}
+              </span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {showSurvival&&(
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,
+          padding:"8px 12px",background:"var(--s2)",borderRadius:"var(--r)",
+          border:"1px solid var(--border)"}}>
+          <span style={{fontSize:11,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",
+            letterSpacing:"0.07em",whiteSpace:"nowrap"}}>Survival to your pick</span>
+          <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+            {TIERS.map(t=>(
+              <span key={t.label} style={{display:"flex",alignItems:"center",gap:5,fontSize:11}}>
+                <span style={{width:9,height:9,borderRadius:2,background:t.color,display:"inline-block",flexShrink:0}}></span>
+                <span style={{color:t.color,fontWeight:700}}>{t.label}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{fontSize:10,color:"var(--text3)",fontWeight:700,letterSpacing:"0.08em",
+        textTransform:"uppercase",marginBottom:8}}>{avail.length} available</div>
+
+      {isMobile?(
+        <div className="pcard-list">
+          {avail.slice(0,130).map(p=>{
+            const sel=selPlayer?.name===p.name;
+            const sv=survival?.[p.name]??null;
+            const pct=sv!=null?Math.round(sv*100):null;
+            const tier=sv!=null?tierFor(sv):null;
+            const inQueue=queue?.includes(p.name);
+            const hasNote=!!(playerNotes?.[p.name]);
+            return(
+              <div key={p.name} className={`pcard${sel?" sel":""}`}
+                onClick={()=>setSelPlayer(sel?null:p)}>
+                <div className="pcard-top">
+                  <span className="pcard-rank">#{p.rank}</span>
+                  <span className="pcard-name">{p.name}</span>
+                  <PB pos={p.pos} posRank={p.posRank}/>
+                  <span className="pcard-meta">{p.team} · Bye {p.bye}</span>
+                </div>
+                {showSurvival&&tier!=null&&(
+                  <div className="pcard-avail">
+                    <div className="pcard-avail-bar">
+                      <div style={{height:"100%",width:`${pct}%`,borderRadius:4,
+                        background:tier.color,boxShadow:`0 0 6px ${tier.color}55`}}/>
+                    </div>
+                    <span className="pcard-avail-label" style={{color:tier.color}}>
+                      {pct}% {tier.label}
+                    </span>
+                  </div>
+                )}
+                <div className="pcard-actions" onClick={e=>e.stopPropagation()}>
+                  <button
+                    className={`pcard-note-btn${hasNote?" has-note":""}`}
+                    onClick={()=>setNoteSheetPlayer(p.name)}>
+                    {hasNote?(playerNotes[p.name].length>40?playerNotes[p.name].slice(0,40)+"…":playerNotes[p.name]):"+ Add note…"}
+                  </button>
+                  <button
+                    className={`pcard-queue-btn${inQueue?" in-queue":""}`}
+                    onClick={()=>{
+                      if(inQueue)setQueue(q=>q.filter(n=>n!==p.name));
+                      else setQueue(q=>[...q,p.name]);
+                    }}>
+                    {inQueue?"★":"☆"}
+                  </button>
+                  {canPick&&sel&&(
+                    <button className="primary pcard-pick-btn"
+                      onClick={()=>onPick(p)}
+                      style={{fontSize:13,padding:"7px 16px"}}>
+                      {mode==="mock"?"Pick ✓":"Draft"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Mobile note editor — bottom sheet */}
+          {noteSheetPlayer&&(
+            <div className="note-sheet-overlay" onClick={()=>setNoteSheetPlayer(null)}>
+              <div className="note-sheet" onClick={e=>e.stopPropagation()}>
+                <div style={{fontSize:13,fontWeight:700,marginBottom:10,color:"var(--text)"}}>
+                  Note — {noteSheetPlayer}
+                </div>
+                <textarea
+                  autoFocus
+                  value={playerNotes?.[noteSheetPlayer]||""}
+                  placeholder="Scouting notes, injury concerns, handcuff info…"
+                  onChange={e=>setPlayerNotes(n=>({...n,[noteSheetPlayer]:e.target.value}))}
+                />
+                <div style={{display:"flex",justifyContent:"flex-end",marginTop:12}}>
+                  <button className="primary" onClick={()=>setNoteSheetPlayer(null)}
+                    style={{padding:"9px 22px",fontSize:13}}>Done</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ):(
+      <div className="ptable-wrap">
+        <table className="ptable" style={{tableLayout:"fixed"}}>
+          <colgroup>
+            <col style={{width:42}}/>  {/* Rank */}
+            <col/>                     {/* Player — takes remaining space */}
+            <col style={{width:54}}/>  {/* Pos */}
+            <col style={{width:46}}/>  {/* NFL */}
+            <col style={{width:36}}/>  {/* Bye */}
+            {showSurvival&&<col style={{width:155}}/>}
+            <col style={{width:150}}/> {/* Notes */}
+            <col style={{width:40}}/> {/* Queue */}
+            <col style={{width:80}}/> {/* Pick — always present */}
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Player</th>
+              <th>Pos</th>
+              <th>NFL</th>
+              <th>Bye</th>
+              {showSurvival&&<th>Availability</th>}
+              <th>Notes</th>
+              <th title="Add to queue">Q</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {avail.slice(0,130).map(p=>{
+              const sel=selPlayer?.name===p.name;
+              const sv=survival?.[p.name]??null;
+              const pct=sv!=null?Math.round(sv*100):null;
+              const tier=sv!=null?tierFor(sv):null;
+              const inQueue=queue?.includes(p.name);
+              return(
+                <tr key={p.name} className={`pr${sel?" sel":""}`} onClick={()=>setSelPlayer(sel?null:p)}>
+                  <td style={{color:"var(--text3)",fontSize:12,fontWeight:600}}>{p.rank}</td>
+                  <td style={{fontWeight:sel?700:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</td>
+                  <td><PB pos={p.pos} posRank={p.posRank}/></td>
+                  <td style={{color:"var(--text2)",fontSize:12,fontWeight:500}}>{p.team}</td>
+                  <td style={{color:"var(--text3)",fontSize:12}}>{p.bye}</td>
+                  {showSurvival&&(
+                    <td style={{padding:"6px 10px"}}>
+                      {tier!=null?(
+                        <div style={{display:"flex",alignItems:"center",gap:7}}>
+                          <div style={{flex:1,height:6,background:"var(--s3)",borderRadius:3,overflow:"hidden"}}>
+                            <div style={{
+                              height:"100%",width:`${pct}%`,borderRadius:3,
+                              background:tier.color,
+                              transition:"width 0.3s",
+                              boxShadow:`0 0 6px ${tier.color}55`,
+                            }}/>
+                          </div>
+                          <span style={{
+                            fontSize:10,fontWeight:800,color:tier.color,
+                            minWidth:58,textAlign:"right",letterSpacing:"0.03em",
+                          }}>{pct}% {tier.label}</span>
+                        </div>
+                      ):null}
+                    </td>
+                  )}
+                  <td className="note-cell" onClick={e=>e.stopPropagation()}>
+                    <div style={{position:"relative"}}>
+                      <input className="note-input"
+                        value={playerNotes?.[p.name]||""}
+                        placeholder="note…"
+                        title={playerNotes?.[p.name]||""}
+                        onChange={e=>setPlayerNotes(n=>({...n,[p.name]:e.target.value}))}
+                        onFocus={e=>{
+                          // Swap to textarea on focus for multi-line editing
+                          e.target.style.display="none";
+                          const ta=e.target.nextSibling;
+                          ta.style.display="block";
+                          ta.focus();
+                        }}
+                      />
+                      <textarea
+                        style={{display:"none",position:"absolute",top:"-4px",left:0,
+                          zIndex:20,width:260,minHeight:72,
+                          fontSize:11,padding:"6px 8px",borderRadius:6,
+                          background:"var(--s1)",border:"1px solid var(--purp)",
+                          color:"var(--text)",resize:"vertical",fontFamily:"inherit",
+                          boxShadow:"0 8px 24px rgba(0,0,0,0.5)"}}
+                        value={playerNotes?.[p.name]||""}
+                        placeholder="note…"
+                        onChange={e=>setPlayerNotes(n=>({...n,[p.name]:e.target.value}))}
+                        onBlur={e=>{
+                          e.target.style.display="none";
+                          e.target.previousSibling.style.display="";
+                        }}
+                      />
+                    </div>
+                  </td>
+                  <td style={{textAlign:"center",padding:"4px 4px"}} onClick={e=>e.stopPropagation()}>
+                    <button
+                      title={inQueue?"Remove from queue":"Add to queue"}
+                      className="ghost"
+                      style={{
+                        fontSize:14,padding:"2px 5px",lineHeight:1,
+                        color:inQueue?"var(--teal)":"var(--text3)",
+                        background:inQueue?"var(--teal-dim)":"transparent",
+                      }}
+                      onClick={()=>{
+                        if(inQueue)setQueue(q=>q.filter(n=>n!==p.name));
+                        else setQueue(q=>[...q,p.name]);
+                      }}>
+                      {inQueue?"★":"☆"}
+                    </button>
+                  </td>
+                  {canPick&&(
+                    <td style={{textAlign:"right",padding:"4px 8px"}}>
+                      {sel&&<button className="primary" onClick={e=>{e.stopPropagation();onPick(p)}}
+                        style={{fontSize:12,padding:"5px 12px"}}>
+                        {mode==="mock"?"Pick ✓":"Draft"}
+                      </button>}
+                    </td>
+                  )}
+                  {!canPick&&<td/>}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Live draft board ── */
+function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks,players,drafted,onEditPick}){
+  const rounds=Array.from({length:numRounds},(_,i)=>i+1);
+  const[editModal,setEditModal]=useState(null); // {overall, currentPlayer}
+  const[editSearch,setEditSearch]=useState("");
+
+  const tradeMap={};
+  if(tradedPicks) tradedPicks.forEach(t=>tradeMap[t.fromPick]=true);
+
+  const n=teams.length;
+  function origTeamIdx(overall){
+    const round=Math.ceil(overall/n);
+    const posInRound=((overall-1)%n)+1;
+    const slotInRound=round%2===1?posInRound:n-posInRound+1;
+    return slotInRound-1;
+  }
+
+  function openEdit(pick){
+    setEditSearch("");
+    setEditModal({overall:pick.overall,current:picks[pick.overall]||null});
+  }
+
+  const editResults=useMemo(()=>{
+    if(!editSearch.trim()||!players)return[];
+    const q=editSearch.toLowerCase();
+    return players.filter(p=>p.name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q)).slice(0,8);
+  },[editSearch,players]);
+
+  return(
+    <div className="board-wrap">
+      <table className="btable">
+        <thead>
+          <tr>
+            <th className="rh" style={{background:"var(--bg)"}}></th>
+            {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}>{t}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rounds.map(r=>{
+            const byEffective={};
+            const byOriginal={};
+            order.filter(p=>p.round===r).forEach(p=>{
+              const isTrade=tradedPicks&&tradedPicks.some(t=>t.fromPick===p.overall);
+              const isDrafted=!!picks[p.overall];
+              if(isTrade&&!isDrafted){
+                const oi=origTeamIdx(p.overall);
+                if(!byOriginal[oi])byOriginal[oi]=[];
+                byOriginal[oi].push(p);
+              } else {
+                if(!byEffective[p.teamIdx])byEffective[p.teamIdx]=[];
+                byEffective[p.teamIdx].push(p);
+              }
+            });
+
+            return(
+              <tr key={r}>
+                <td className="rh">{r}</td>
+                {teams.map((_,i)=>{
+                  const effPicks=byEffective[i]||[];
+                  const origPicks=byOriginal[i]||[];
+                  const allPicks=[...effPicks,...origPicks];
+                  if(!allPicks.length)return<td key={i} className={i===myIdx?"mine-col":""}/>;
+                  const isCurCell=allPicks.some(p=>order.findIndex(o=>o.overall===p.overall)===currentPickIdx);
+                  return(
+                    <td key={i}
+                      className={`${i===myIdx?"mine-col":""}${isCurCell?" cur":""}`}
+                      title="Click to edit"
+                      style={{cursor:"pointer"}}
+                      onClick={()=>openEdit(allPicks[0])}>
+                      {allPicks.map(pick=>{
+                        const player=picks[pick.overall];
+                        const isTrade=tradedPicks&&tradedPicks.some(t=>t.fromPick===pick.overall);
+                        const origIdx=origTeamIdx(pick.overall);
+                        const origName=teams[origIdx]||"";
+                        const newOwner=teams[pick.teamIdx]||"";
+                        const isOriginalOwner=(origIdx===i);
+                        return(
+                          <div key={pick.overall} className="bcell">
+                            {player?(
+                              <>
+                                <div style={{display:"flex",alignItems:"center",gap:3}}>
+                                  <PB pos={player.pos} posRank={player.posRank||player.pos} style={{fontSize:9,padding:"1px 4px"}}/>
+                                  <span className="bn">{lastName(player.name)}</span>
+                                </div>
+                                {isTrade&&<span className="bm" style={{color:"var(--warn)",fontSize:8}}>via {origName.toUpperCase()}</span>}
+                                {player.team&&<span className="bm" style={{color:"var(--text3)"}}>{player.team}</span>}
+                              </>
+                            ):(
+                              isTrade&&isOriginalOwner?(
+                                <>
+                                  <span className="bm" style={{color:"var(--warn)"}}>to</span>
+                                  <span className="bn" style={{color:"var(--warn)"}}>{newOwner.toUpperCase()}</span>
+                                  <span className="bnum">#{pick.overall}</span>
+                                </>
+                              ):(
+                                <span className="bnum">#{pick.overall}</span>
+                              )
+                            )}
+                          </div>
+                        );
+                      })}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Edit pick modal */}
+      {editModal&&(
+        <div className="overlay" onClick={()=>setEditModal(null)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">Edit Pick #{editModal.overall}</div>
+            <div className="modal-sub">
+              {editModal.current
+                ?<>Currently: <strong>{editModal.current.name}</strong> — search to replace, or clear</>
+                :"No pick yet — search to force assign"}
+            </div>
+            <div style={{position:"relative",marginBottom:12}}>
+              <input autoFocus value={editSearch} onChange={e=>setEditSearch(e.target.value)}
+                placeholder="Search player…" style={{width:"100%"}}/>
+              {editResults.length>0&&(
+                <div className="ac-list">
+                  {editResults.map(p=>(
+                    <div key={p.name} className="ac-item" onClick={()=>{
+                      onEditPick(editModal.overall,p);
+                      setEditModal(null);
+                    }}>
+                      <PB pos={p.pos} posRank={p.pos}/>
+                      <span style={{fontWeight:600}}>{p.name}</span>
+                      <span style={{fontSize:11,color:"var(--text3)",marginLeft:"auto"}}>{p.team} · #{p.rank}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:16}}>
+              {editModal.current&&(
+                <button className="danger-ghost" onClick={()=>{
+                  onEditPick(editModal.overall,null);
+                  setEditModal(null);
+                }}>Clear pick</button>
+              )}
+              <button className="ghost" onClick={()=>setEditModal(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Rosters ── */
+function RostersTab({teams,rosters,myTeam}){
+  const[open,setOpen]=useState(myTeam);
+  return(
+    <div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
+        {teams.map(t=>(
+          <button key={t} onClick={()=>setOpen(t)}
+            style={{padding:"5px 14px",fontSize:13,fontWeight:open===t?800:500,
+              background:open===t?"var(--teal)":"var(--s2)",
+              color:open===t?"#0B0B14":"var(--text2)",
+              borderColor:open===t?"var(--teal)":"var(--border2)"}}>
+            {t}<span style={{opacity:.5,fontWeight:400,marginLeft:5}}>({(rosters[t]||[]).length})</span>
+          </button>
+        ))}
+      </div>
+      <RosterView roster={rosters[open]||[]}/>
+    </div>
+  );
+}
+
+function RosterView({roster,showCounts}){
+  const sorted=[...roster].sort((a,b)=>a.pickNum-b.pickNum);
+  const byPos={};roster.forEach(p=>{if(!byPos[p.pos])byPos[p.pos]=[];byPos[p.pos].push(p)});
+  return(
+    <div>
+      {showCounts&&(
+        <div className="rcounts">
+          {["QB","RB","WR","TE","K","DST"].filter(p=>byPos[p]?.length).map(p=>(
+            <span key={p} className={`pb ${p}`} style={{padding:"5px 14px",fontSize:12,fontWeight:800}}>
+              {p} ×{byPos[p].length}
+            </span>
+          ))}
+          {!roster.length&&<span style={{color:"var(--text3)",fontSize:13}}>No picks yet</span>}
+        </div>
+      )}
+      {sorted.length>0&&(
+        <div className="ptable-wrap">
+          <table className="ptable">
+            <thead>
+              <tr>
+                <th style={{width:36}}>Rd</th><th style={{width:44}}>#</th>
+                <th>Player</th><th style={{width:64}}>Pos</th>
+                <th style={{width:50}}>NFL</th><th style={{width:40}}>Bye</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map(p=>(
+                <tr key={p.pickNum}>
+                  <td style={{color:"var(--text3)",fontWeight:600}}>{p.round}</td>
+                  <td style={{color:"var(--text3)",fontWeight:600}}>{p.pickNum}</td>
+                  <td style={{fontWeight:600}}>{p.name}</td>
+                  <td><PB pos={p.pos} posRank={p.posRank}/></td>
+                  <td style={{color:"var(--text2)",fontSize:12,fontWeight:500}}>{p.team}</td>
+                  <td style={{color:"var(--text3)",fontSize:12}}>{p.bye}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {!sorted.length&&!showCounts&&<p style={{color:"var(--text3)",padding:"12px 0",fontSize:13}}>No picks yet.</p>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
