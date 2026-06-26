@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Wreckineyez — Mock Draft</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -115,6 +118,24 @@ body{min-height:100vh}
 .step-head p{color:var(--text2);font-size:13px;margin-top:6px;line-height:1.55}
 
 /* ── cards ── */
+.countdown{display:flex;align-items:center;gap:16px;background:var(--s1);
+  border:1px solid var(--border);border-radius:var(--rl);padding:14px 20px;
+  margin-bottom:20px;flex-wrap:wrap}
+.countdown-label{font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--text3);flex-shrink:0}
+.countdown-units{display:flex;gap:12px;flex:1;flex-wrap:wrap}
+.countdown-unit{display:flex;flex-direction:column;align-items:center;min-width:40px}
+.countdown-num{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:900;
+  line-height:1;color:var(--teal);font-variant-numeric:tabular-nums}
+.countdown-sub{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text3);margin-top:2px}
+.countdown-live{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;
+  color:var(--mag);letter-spacing:0.04em;text-transform:uppercase;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+@media(max-width:768px){
+  .countdown{padding:10px 14px;gap:10px}
+  .countdown-num{font-size:22px}
+}
 .card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:22px 24px;margin-bottom:14px}
 .card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:16px}
 
@@ -423,8 +444,9 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 /* ── general responsive layout, <768px ──
    Desktop rules above are unaffected; these only apply under the breakpoint. */
 @media (max-width:768px){
-  .page,.draft-page,.results-page{padding:16px 14px 90px;max-width:100%}
-  .site-header{padding:0 14px}
+  body{overflow-x:hidden}
+  .page,.draft-page,.results-page{padding:12px 10px 90px;max-width:100%;width:100%;box-sizing:border-box}
+  .site-header{padding:0 10px}
   .header-steps{gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .hstep{font-size:11px;padding:6px 9px;white-space:nowrap}
   .draft-layout{flex-direction:column;gap:14px}
@@ -432,7 +454,7 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
     width:100%;position:static;max-height:none;order:3;
     padding:12px;
   }
-  .draft-main{order:1}
+  .draft-main{order:1;min-width:0;width:100%}
   .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
   .tab{white-space:nowrap;flex-shrink:0}
   .clock{flex-direction:column;align-items:flex-start;gap:10px}
@@ -440,14 +462,20 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
   .needs-row{gap:5px}
   .g6{grid-template-columns:repeat(2,1fr)}
   .results-grid{grid-template-columns:1fr}
-  /* Draft board: keep horizontal scroll (a 14-column grid cannot stack),
-     but shrink it and add a visible scroll hint */
   .board-wrap,.setup-board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .btable{font-size:10px}
   .bcell{min-width:64px;padding:3px 4px}
-  /* Sticky callout-style scroll hint above wide tables */
   .mobile-scroll-hint{display:flex;align-items:center;gap:6px;font-size:11px;
     color:var(--text3);padding:6px 2px;font-weight:600}
+  /* Compact mobile player cards */
+  .pcard{padding:8px 10px}
+  .pcard-top{margin-bottom:0;gap:6px}
+  .pcard-avail{margin:5px 0 0}
+  .pcard-avail-bar{height:5px}
+  .pcard-avail-label{font-size:10px;min-width:52px}
+  .pcard-actions{margin-top:5px;gap:6px}
+  .pcard-note-btn{padding:5px 8px;font-size:11px}
+  .pcard-queue-btn{padding:5px 8px;font-size:15px}
 }
 @media (min-width:769px){
   .mobile-scroll-hint{display:none}
@@ -983,7 +1011,7 @@ function App(){
   const[playerNotes,setPlayerNotes]=useState(saved.playerNotes||{});
   // Feature 5: queue of player names
   const[queue,setQueue]=useState(saved.queue||[]);
-  const[queueOpen,setQueueOpen]=useState(true);
+  const[queueOpen,setQueueOpen]=useState(false);
   const[generalNotes,setGeneralNotes]=useState(saved.generalNotes||"");
   const[notesOpen,setNotesOpen]=useState(false);
   const[snarkMsg,setSnarkMsg]=useState(null);
@@ -1310,6 +1338,7 @@ function App(){
 
       {screen==="setup"&&(
         <div className="page" style={{overflowX:"visible"}}>
+          <Countdown/>
 
           {/* ── Settings ── */}
           {setupTab==="settings"&&(
@@ -2134,7 +2163,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         const totalStarter=starters.reduce((s,p)=>s+adpExpectedPts(p.pos,p.rank||p.pickNum||100),0);
 
         return(
-          <div style={{display:"flex",gap:12,marginBottom:20,alignItems:"flex-start",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:12,marginBottom:20,alignItems:"stretch",flexWrap:"wrap"}}>
 
             {/* Left: standings */}
             {hasStandings&&(
@@ -2447,6 +2476,65 @@ function projectStandings(teams, rosters, rosterSlots, picks, order, myTeam){
   });
   scored.sort((a,b)=>b.projPts-a.projPts);
   return scored;
+}
+
+/* ── Draft countdown ── */
+const DRAFT_DATE=new Date("2026-08-28T19:00:00-05:00"); // Aug 28 2026, 7pm EST
+
+function Countdown(){
+  const[now,setNow]=useState(()=>new Date());
+  useEffect(()=>{
+    const id=setInterval(()=>setNow(new Date()),1000);
+    return()=>clearInterval(id);
+  },[]);
+
+  const diff=DRAFT_DATE-now;
+
+  if(diff<=0){
+    return(
+      <div className="countdown">
+        <span className="countdown-live">🏈 Draft Day!</span>
+        <span style={{fontSize:13,color:"var(--text2)",marginLeft:4}}>Good luck everyone.</span>
+      </div>
+    );
+  }
+
+  const totalSecs=Math.floor(diff/1000);
+  const d=Math.floor(totalSecs/86400);
+  const h=Math.floor((totalSecs%86400)/3600);
+  const m=Math.floor((totalSecs%3600)/60);
+  const s=totalSecs%60;
+
+  const pad=n=>String(n).padStart(2,"0");
+
+  return(
+    <div className="countdown">
+      <span className="countdown-label">Draft in</span>
+      <div className="countdown-units">
+        {d>0&&(
+          <div className="countdown-unit">
+            <span className="countdown-num">{d}</span>
+            <span className="countdown-sub">{d===1?"day":"days"}</span>
+          </div>
+        )}
+        <div className="countdown-unit">
+          <span className="countdown-num">{pad(h)}</span>
+          <span className="countdown-sub">hrs</span>
+        </div>
+        <div className="countdown-unit">
+          <span className="countdown-num">{pad(m)}</span>
+          <span className="countdown-sub">min</span>
+        </div>
+        <div className="countdown-unit">
+          <span className="countdown-num">{pad(s)}</span>
+          <span className="countdown-sub">sec</span>
+        </div>
+      </div>
+      <span style={{fontSize:11,color:"var(--text3)",flexShrink:0}}>
+        Aug 28 · 7:00 PM EST
+      </span>
+    </div>
+  );
 }
 
 const WT_STEPS=[
@@ -2879,45 +2967,51 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
             return(
               <div key={p.name} className={`pcard${sel?" sel":""}`}
                 onClick={()=>setSelPlayer(sel?null:p)}>
-                <div className="pcard-top">
-                  <span className="pcard-rank">#{p.rank}</span>
-                  <span className="pcard-name">{p.name}</span>
+                {/* Single row: rank · name · pos · team/bye · note · queue · pick */}
+                <div style={{display:"flex",alignItems:"center",gap:6}} onClick={e=>e.stopPropagation()}>
+                  <span className="pcard-rank" onClick={()=>setSelPlayer(sel?null:p)}>#{p.rank}</span>
+                  <span className="pcard-name" style={{flex:1,cursor:"pointer"}}
+                    onClick={()=>setSelPlayer(sel?null:p)}>{p.name}</span>
                   <PB pos={p.pos} posRank={p.posRank}/>
-                  <span className="pcard-meta">{p.team} · Bye {p.bye}</span>
-                </div>
-                {showSurvival&&tier!=null&&(
-                  <div className="pcard-avail">
-                    <div className="pcard-avail-bar">
-                      <div style={{height:"100%",width:`${pct}%`,borderRadius:4,
-                        background:tier.color,boxShadow:`0 0 6px ${tier.color}55`}}/>
-                    </div>
-                    <span className="pcard-avail-label" style={{color:tier.color}}>
-                      {pct}% {tier.label}
-                    </span>
-                  </div>
-                )}
-                <div className="pcard-actions" onClick={e=>e.stopPropagation()}>
+                  <span style={{fontSize:10,color:"var(--text3)",flexShrink:0,whiteSpace:"nowrap"}}>{p.team}</span>
+                  {/* Note icon button */}
                   <button
                     className={`pcard-note-btn${hasNote?" has-note":""}`}
+                    style={{flex:"none",padding:"4px 7px",fontSize:13,minWidth:"auto"}}
                     onClick={()=>setNoteSheetPlayer(p.name)}>
-                    {hasNote?(playerNotes[p.name].length>40?playerNotes[p.name].slice(0,40)+"…":playerNotes[p.name]):"+ Add note…"}
+                    {hasNote?"✎":"✎"}
                   </button>
+                  {/* Queue star */}
                   <button
                     className={`pcard-queue-btn${inQueue?" in-queue":""}`}
+                    style={{padding:"4px 7px",fontSize:14}}
                     onClick={()=>{
                       if(inQueue)setQueue(q=>q.filter(n=>n!==p.name));
                       else setQueue(q=>[...q,p.name]);
                     }}>
                     {inQueue?"★":"☆"}
                   </button>
+                  {/* Pick button — only when selected and it's your turn */}
                   {canPick&&sel&&(
                     <button className="primary pcard-pick-btn"
                       onClick={()=>onPick(p)}
-                      style={{fontSize:13,padding:"7px 16px"}}>
+                      style={{fontSize:12,padding:"5px 12px",flexShrink:0}}>
                       {mode==="mock"?"Pick ✓":"Draft"}
                     </button>
                   )}
                 </div>
+                {/* Availability bar — compact, only when survival data exists */}
+                {showSurvival&&tier!=null&&(
+                  <div className="pcard-avail">
+                    <div className="pcard-avail-bar">
+                      <div style={{height:"100%",width:`${pct}%`,borderRadius:4,
+                        background:tier.color,boxShadow:`0 0 4px ${tier.color}55`}}/>
+                    </div>
+                    <span className="pcard-avail-label" style={{color:tier.color}}>
+                      {pct}%
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
