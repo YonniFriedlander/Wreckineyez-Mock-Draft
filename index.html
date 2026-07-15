@@ -986,7 +986,6 @@ function App(){
   const saved=useMemo(load,[]);
   const[screen,setScreen]=useState("setup");
   const[setupTab,setSetupTab]=useState("settings");
-  const[rankSource,setRankSource]=useState(saved.rankSource||"ecr");
   const[teams,setTeams]=useState(saved.teams||DEF_TEAMS);
   const[myTeam,setMyTeam]=useState(saved.myTeam||DEF_MY);
   const[mode,setMode]=useState("mock");
@@ -1028,6 +1027,7 @@ function App(){
   const[walkthroughDone,setWalkthroughDone]=useState(()=>!!localStorage.getItem("wreckineyez-wt"));
   const[fetchState,setFetchState]=useState("idle");
   const[fetchError,setFetchError]=useState(null);
+  const[rankSource,setRankSource]=useState(saved.rankSource||"ecr");
   const[lastFetchSource,setLastFetchSource]=useState("ecr");
   const simRef=useRef(null);
 
