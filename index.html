@@ -1027,7 +1027,6 @@ function App(){
   const[walkthroughDone,setWalkthroughDone]=useState(()=>!!localStorage.getItem("wreckineyez-wt"));
   const[fetchState,setFetchState]=useState("idle");
   const[fetchError,setFetchError]=useState(null);
-  const[rankSource,setRankSource]=useState(saved.rankSource||"ecr");
   const[lastFetchSource,setLastFetchSource]=useState("ecr");
   const simRef=useRef(null);
 
@@ -1036,7 +1035,7 @@ function App(){
   async function fetchLive(source){
     setFetchState("loading");setFetchError(null);setLastFetchSource(source);
     try{
-      const file=source==="adp"?"rankings-adp.json":"rankings.json";
+      const file="rankings.json";
       const r=await fetch(file,{cache:"no-store",signal:AbortSignal.timeout(15000)});
       if(!r.ok)throw new Error(`Could not load ${file} (HTTP ${r.status}). Make sure it's uploaded next to index.html.`);
       const json=await r.json();
@@ -1053,7 +1052,7 @@ function App(){
   }
 
   useEffect(()=>{
-    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes,rankSource});
+    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes});
   },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue]);
 
   const myIdx=teams.indexOf(myTeam);
@@ -1259,7 +1258,7 @@ function App(){
   // Auto-load rankings on startup if none saved
   useEffect(()=>{
     if(players.length===0){
-      const t=setTimeout(()=>fetchLive(rankSource),800);
+      const t=setTimeout(()=>fetchLive("ecr"),800);
       return()=>clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1383,28 +1382,15 @@ function App(){
                 </div>
               </div>
 
-              {/* 3. Ranking source */}
+              {/* 3. Rankings status */}
               <div className="card" data-wt="rank-source">
-                <div className="card-title">Ranking source</div>
-                <div className="frow">
-                  <label>Use for draft order</label>
-                  <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-                    {[["ecr","ECR — Expert Consensus Rankings"],["adp","ADP — Average Draft Position"]].map(([v,l])=>(
-                      <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,fontWeight:500}}>
-                        <input type="radio" checked={rankSource===v} onChange={()=>{
-                          setRankSource(v);
-                          fetchLive(v);
-                        }}/> {l}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div style={{marginTop:10}}>
+                <div className="card-title">Rankings</div>
+                <div style={{marginTop:4}}>
                   {players.length>0?(
                     <div className="banner ok">
                       <span style={{fontSize:15}}>✓</span>
-                      <span><strong>{players.length} players</strong> loaded</span>
-                      {ranksMeta&&<span style={{fontSize:11,opacity:0.7,marginLeft:4}}>· {ranksMeta.name} · {ranksMeta.date}</span>}
+                      <span><strong>{players.length} players</strong> loaded (ECR)</span>
+                      {ranksMeta&&<span style={{fontSize:11,opacity:0.7,marginLeft:4}}>· {ranksMeta.date}</span>}
                     </div>
                   ):(
                     <div className="banner warn">
@@ -2557,9 +2543,9 @@ const WT_STEPS=[
   },
   {
     tab:"settings", target:"rank-source",
-    title:"Step 2 — Ranking Source",
-    body:"Choose ECR (Expert Consensus Rankings) or ADP (Average Draft Position) as the basis for player rankings and CPU draft behaviour.",
-    hl:["ECR","ADP"],
+    title:"Step 2 — Rankings",
+    body:"Shows the current rankings status. Expert Consensus Rankings load automatically when the app opens and are updated periodically by the commissioner.",
+    hl:[],
   },
   {
     tab:"settings", target:null,

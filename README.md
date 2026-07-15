@@ -9,11 +9,12 @@ A fantasy football mock draft simulator built for the Wreckineyez league.
 ## What it does
 
 - Simulates a full 14-team keeper league draft against CPU opponents
-- Loads current player rankings from FantasyPros (ECR and ADP)
+- Loads current player rankings from FantasyPros ECR
 - Tracks keepers, traded picks, and a full draft board
 - Shows player availability probability at your next pick
 - Queue system and per-player scouting notes (saved between sessions)
-- End-of-draft projected standings based on a fitted ADP→points model
+- End-of-draft projected standings based on a fitted ECR→points model
+- Snarky draft feedback for everyone who isn't the commissioner
 
 ## League settings
 
@@ -25,22 +26,21 @@ A fantasy football mock draft simulator built for the Wreckineyez league.
 
 ## Updating rankings
 
-Rankings are served as static JSON files. They will be uploaded periodcically by Yonni. Here are notes to remind him how to do it:
+Rankings are served as a static JSON file. They will be uploaded periodically by Yonni. Here are notes to remind him how to do it:
 
 1. Run:
    ```
    python3 generate_rankings_json.py
    ```
-2. Commit and push both `rankings.json` and `rankings-adp.json` together in one commit
+2. Commit and push `rankings.json`
 
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `index.html` | The app |
-| `rankings.json` | ECR rankings  |
-| `rankings-adp.json` | ADP rankings |
-| `generate_rankings_json.py` | Script to refresh both JSON files |
+| `rankings.json` | ECR rankings |
+| `generate_rankings_json.py` | Script to refresh rankings.json |
 | `fp_proxy.py` | Rankings-fetching engine used by the generator |
 
 ## Notes
