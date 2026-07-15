@@ -4,16 +4,18 @@ generate_rankings_json.py
 ==========================
 Run this locally (with fp_proxy.py in the same folder) to produce
 rankings.json and rankings-adp.json — the two static files the hosted
-version of the app reads.
+app reads.
 
 Usage:
     python3 generate_rankings_json.py
 
-This starts fp_proxy's fetch logic directly (no server needed), pulls
-ECR and ADP from FantasyPros, and writes both JSON files to this folder.
-Upload those two files next to index.html on GitHub Pages whenever you
-want to refresh rankings — no app changes needed.
+Both files are generated from a single ECR fetch. The ECR page includes
+an ADP column (avg), so no separate ADP fetch is needed. rankings.json
+uses ECR rank; rankings-adp.json uses the ADP value as the rank.
+Upload both files next to index.html on GitHub Pages together in one
+commit to update the live app.
 """
+import copy
 import json
 import sys
 from datetime import datetime, timezone
@@ -24,35 +26,50 @@ except ImportError:
     print("ERROR: fp_proxy.py must be in the same folder as this script.")
     sys.exit(1)
 
-def fetch_and_save(source, outfile):
-    print(f"Fetching {source.upper()} rankings from FantasyPros...")
+if __name__ == "__main__":
+    print("Fetching ECR rankings from FantasyPros...\n")
+
     try:
-        players, error, _raw_html = fp_proxy.get_rankings(source)
+        players, error, _raw_html = fp_proxy.get_rankings("ecr")
     except Exception as e:
         print(f"  FAILED: {e}")
-        return False
+        sys.exit(1)
+
     if error or not players:
         print(f"  FAILED: {error or 'no players returned'}")
-        return False
-    payload = {
-        "players": players,
-        "updated": datetime.now(timezone.utc).isoformat(),
-        "source": source,
-    }
-    with open(outfile, "w") as f:
-        json.dump(payload, f, indent=None, separators=(",", ":"))
-    print(f"  OK — {len(players)} players written to {outfile}")
-    return True
-
-if __name__ == "__main__":
-    print("Generating static rankings files for the hosted app...\n")
-    ok1 = fetch_and_save("ecr", "rankings.json")
-    ok2 = fetch_and_save("adp", "rankings-adp.json")
-    print()
-    if ok1 or ok2:
-        print("Done. Upload the generated .json file(s) to your hosting")
-        print("provider, next to index.html, to update the live app.")
-    else:
-        print("Both fetches failed. Check your internet connection or")
-        print("see fp_proxy.py's debug output for details.")
         sys.exit(1)
+
+    print(f"  OK — {len(players)} players fetched\n")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # ECR file — rank is ECR rank
+    ecr_payload = {"players": players, "updated": now, "source": "ecr"}
+    with open("rankings.json", "w") as f:
+        json.dump(ecr_payload, f, indent=None, separators=(",", ":"))
+    print(f"  OK — {len(players)} players written to rankings.json (ECR)")
+
+    # ADP file — promote adp to rank, fall back to ecr rank if no adp available
+    adp_players = []
+    missing_adp = 0
+    for p in players:
+        ap = copy.copy(p)
+        if ap.get("adp"):
+            ap["rank"] = round(ap["adp"])
+        else:
+            missing_adp += 1
+        adp_players.append(ap)
+
+    # Sort by ADP rank
+    adp_players.sort(key=lambda p: p["rank"])
+    # Re-assign sequential posRank based on ADP order
+    adp_players = fp_proxy.assign_pos_ranks(adp_players)
+
+    adp_payload = {"players": adp_players, "updated": now, "source": "adp"}
+    with open("rankings-adp.json", "w") as f:
+        json.dump(adp_payload, f, indent=None, separators=(",", ":"))
+    print(f"  OK — {len(adp_players)} players written to rankings-adp.json (ADP)")
+    if missing_adp:
+        print(f"  Note: {missing_adp} players had no ADP data, ECR rank used as fallback")
+
+    print("\nDone. Upload BOTH .json files together in one commit to update the live app.")

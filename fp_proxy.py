@@ -34,9 +34,6 @@ ECR_URLS = [
     "https://www.fantasypros.com/nfl/rankings/consensus-cheatsheets.php",
     "https://www.fantasypros.com/nfl/rankings/half-point-ppr-cheatsheets.php",
 ]
-ADP_URLS = [
-    "https://www.fantasypros.com/nfl/adp/overall.php",
-]
 
 _cache = {}   # source -> {data, fetched_at, raw_html}
 
@@ -246,13 +243,20 @@ def _norm(raw, idx):
                raw.get("pos") or (raw.get("player") or {}).get("position") or "").upper()
     pos_base = re.sub(r"\d+$", "", pos)
 
-    # rank: try several key names
+    # rank: ECR rank
     rank_raw = (raw.get("rank_ecr") or raw.get("rank") or raw.get("overall_rank") or
                 raw.get("avg") or raw.get("adp") or idx + 1)
     try:
         rank = int(float(rank_raw))
     except (TypeError, ValueError):
         rank = idx + 1
+
+    # adp: separate ADP field when available (avg column on ECR page)
+    adp_raw = raw.get("avg") or raw.get("adp") or raw.get("adp_overall")
+    try:
+        adp = round(float(adp_raw), 1) if adp_raw else None
+    except (TypeError, ValueError):
+        adp = None
 
     tier_raw = raw.get("tier") or raw.get("tier_ecr") or 1
     try:
@@ -264,6 +268,7 @@ def _norm(raw, idx):
 
     return {
         "rank":    rank,
+        "adp":     adp,
         "name":    name.strip(),
         "team":    str(team).strip().upper(),
         "pos":     pos_base,
@@ -288,6 +293,7 @@ def assign_pos_ranks(players):
     return players
 
 
+
 def get_rankings(source):
     global _cache
     cached = _cache.get(source)
@@ -296,7 +302,7 @@ def get_rankings(source):
         print(f"  [cache] {source} — {len(cached['data'])} players, {age}s old")
         return cached["data"], None, cached.get("raw_html", "")
 
-    urls = ECR_URLS if source == "ecr" else ADP_URLS
+    urls = ECR_URLS
     last_err = None
 
     for url in urls:
@@ -347,7 +353,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/")
 
-        if path in ("/ecr", "/adp"):
+        if path == "/ecr":
             source = path.lstrip("/")
             print(f"\n→ {source.upper()} requested")
             players, err, _ = get_rankings(source)
@@ -366,7 +372,7 @@ class Handler(BaseHTTPRequestHandler):
             # /debug/ecr or /debug/adp — returns a snippet of raw HTML
             # so you can see what the page actually contains
             source = path.split("/")[-1]
-            if source not in ("ecr", "adp"):
+            if source != "ecr":
                 self._cors(404); self.end_headers(); return
 
             print(f"\n→ DEBUG {source.upper()}")
