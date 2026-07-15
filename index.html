@@ -237,23 +237,28 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 /* ── boards ── */
 .board-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl)}
 /* In setup, let the board be full width without internal scroll */
-.setup-board-wrap{overflow-x:visible;border:1px solid var(--border);border-radius:var(--rl)}
-.btable{border-collapse:collapse;font-size:11px;min-width:max-content;width:100%}
+.setup-board-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--rl)}
+.btable{border-collapse:collapse;font-size:11px;width:100%;table-layout:fixed}
 .btable th,.btable td{
-  padding:0;white-space:nowrap;text-align:center;
+  padding:0;text-align:center;
   border-bottom:1px solid var(--border);border-right:1px solid var(--border);
-  height:46px;vertical-align:middle}
-.btable th{height:32px;padding:0 8px}
+  vertical-align:middle}
+.btable th{height:52px;padding:0 1px;overflow:hidden}
 .btable th:last-child,.btable td:last-child{border-right:none}
 .btable thead th{
-  background:var(--bg);font-size:10px;font-weight:700;text-transform:uppercase;
+  background:var(--bg);font-size:9px;font-weight:700;text-transform:uppercase;
   letter-spacing:0.07em;color:var(--text3);border-bottom:1px solid var(--border2);border-right:1px solid var(--border)}
 /* your column header — magenta */
 .btable thead th.mine-h{background:var(--mag-dim);color:var(--mag);border-bottom-color:var(--mag-border)}
+/* Rotated team name in header */
+.bth-inner{display:block;writing-mode:vertical-rl;transform:rotate(180deg);
+  white-space:nowrap;font-size:9px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.05em;padding:4px 0;margin:0 auto;max-height:50px;overflow:hidden}
+/* round column — sticky left */
 .rh{
-  text-align:left;font-size:10px;font-weight:700;color:var(--text3);
+  text-align:center;font-size:9px;font-weight:700;color:var(--text3);
   position:sticky;left:0;background:var(--bg);z-index:2;
-  width:28px;padding:0 8px;border-right:1px solid var(--border2) !important}
+  width:18px !important;padding:0 2px;border-right:1px solid var(--border2) !important}
 /* even rows slightly lighter */
 .btable tbody tr:nth-child(even) td:not(.rh){background:rgba(255,255,255,0.015)}
 .btable td.mine-col{background:rgba(232,54,110,0.05)}
@@ -262,11 +267,12 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 .btable td.traded{background:rgba(245,158,11,0.08)}
 .btable td.clickable{cursor:pointer}
 .btable td.clickable:hover{background:var(--s3)}
+/* Compact cells — pos+rank on top, name below */
 .bcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  min-width:84px;padding:4px 6px;height:100%}
-.bcell .bn{font-size:10px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bcell .bm{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
-.bcell .bnum{font-size:10px;color:var(--text3);font-weight:400}
+  padding:2px 1px;height:40px;width:100%;overflow:hidden}
+.bcell .bn{font-size:9px;font-weight:700;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.bcell .bm{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
+.bcell .bnum{font-size:8px;color:var(--text3);font-weight:400}
 
 /* ── player table ── */
 .ptable-wrap{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
@@ -463,8 +469,9 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
   .g6{grid-template-columns:repeat(2,1fr)}
   .results-grid{grid-template-columns:1fr}
   .board-wrap,.setup-board-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .btable{font-size:10px}
-  .bcell{min-width:64px;padding:3px 4px}
+  .btable{font-size:9px}
+  .bcell{height:34px}
+  .rh{width:14px !important}
   .mobile-scroll-hint{display:flex;align-items:center;gap:6px;font-size:11px;
     color:var(--text3);padding:6px 2px;font-weight:600}
   /* Compact mobile player cards */
@@ -881,7 +888,7 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
           <thead>
             <tr>
               <th className="rh" style={{background:"var(--bg)"}}></th>
-              {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}>{t}</th>)}
+              {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}><span className="bth-inner">{t}</span></th>)}
             </tr>
           </thead>
           <tbody>
@@ -908,20 +915,18 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
                           return(
                             <div key={pick.overall}
                               className={`bcell clickable${i===myIdx?" mine-col":""}${keeper?" keeper":""}${trade&&!keeper?" traded":""}`}
-                              style={{borderRadius:"var(--r)",padding:"3px 4px",marginBottom:cellPicks.length>1?2:0}}
+                              style={{borderRadius:"var(--r)",padding:"2px 1px",marginBottom:cellPicks.length>1?2:0}}
                               onClick={()=>openCell(pick)}>
                               {keeper?(
                                 <>
-                                  <div style={{display:"flex",alignItems:"center",gap:3}}>
-                                    {pl&&<PB pos={pl.pos} posRank={pl.pos} style={{fontSize:9,padding:"1px 4px"}}/>}
-                                    <span className="bn" style={{color:"var(--go)"}}>{lastName(keeper.player)}</span>
-                                  </div>
-                                  <span className="bm" style={{color:"var(--go)"}}>keeper</span>
+                                  {pl&&<PB pos={pl.pos} posRank={pl.pos} style={{fontSize:8,padding:"0 3px"}}/>}
+                                  <span className="bn" style={{color:"var(--go)"}}>{lastName(keeper.player)}</span>
+                                  <span className="bm" style={{color:"var(--go)",fontSize:7}}>keeper</span>
                                 </>
                               ):trade?(
                                 <>
-                                  <span className="bm" style={{color:"var(--warn)"}}>to</span>
-                                  <span className="bn" style={{color:"var(--warn)"}}>{trade.toTeam.toUpperCase()}</span>
+                                  <span className="bm" style={{color:"var(--warn)"}}>→</span>
+                                  <span className="bn" style={{color:"var(--warn)"}}>{trade.toTeam.slice(0,6)}</span>
                                 </>
                               ):(
                                 <span className="bnum">#{pick.overall}</span>
@@ -3200,7 +3205,7 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
         <thead>
           <tr>
             <th className="rh" style={{background:"var(--bg)"}}></th>
-            {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}>{t}</th>)}
+            {teams.map((t,i)=><th key={i} className={i===myIdx?"mine-h":""}><span className="bth-inner">{t}</span></th>)}
           </tr>
         </thead>
         <tbody>
@@ -3246,19 +3251,17 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
                           <div key={pick.overall} className="bcell">
                             {player?(
                               <>
-                                <div style={{display:"flex",alignItems:"center",gap:3}}>
-                                  <PB pos={player.pos} posRank={player.posRank||player.pos} style={{fontSize:9,padding:"1px 4px"}}/>
-                                  <span className="bn">{lastName(player.name)}</span>
+                                <div style={{display:"flex",alignItems:"center",gap:2,justifyContent:"center"}}>
+                                  <PB pos={player.pos} posRank={player.posRank||player.pos} style={{fontSize:8,padding:"0 3px"}}/>
                                 </div>
-                                {isTrade&&<span className="bm" style={{color:"var(--warn)",fontSize:8}}>via {origName.toUpperCase()}</span>}
-                                {player.team&&<span className="bm" style={{color:"var(--text3)"}}>{player.team}</span>}
+                                <span className="bn">{lastName(player.name)}</span>
+                                {isTrade&&<span className="bm" style={{color:"var(--warn)",fontSize:7}}>via {teams[origTeamIdx(pick.overall)]?.slice(0,4).toUpperCase()}</span>}
                               </>
                             ):(
                               isTrade&&isOriginalOwner?(
                                 <>
-                                  <span className="bm" style={{color:"var(--warn)"}}>to</span>
-                                  <span className="bn" style={{color:"var(--warn)"}}>{newOwner.toUpperCase()}</span>
-                                  <span className="bnum">#{pick.overall}</span>
+                                  <span className="bm" style={{color:"var(--warn)"}}>→</span>
+                                  <span className="bn" style={{color:"var(--warn)"}}>{teams[pick.teamIdx]?.slice(0,5)}</span>
                                 </>
                               ):(
                                 <span className="bnum">#{pick.overall}</span>
