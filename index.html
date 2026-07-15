@@ -1133,7 +1133,15 @@ function App(){
     const np={};
     keepers.forEach(k=>{
       const round=parseInt(k.round);const ti=teams.indexOf(k.team);if(ti<0)return;
-      const slot=eff.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);if(!slot)return;
+      // Find the team's ORIGINAL pick in this round (before trade reassignment).
+      // If a team has multiple picks in the round (e.g. their own + a traded-in pick),
+      // the keeper should consume the original pick, not a pick they acquired via trade.
+      // originalOwnerIdx tells us who originally owned each pick before trades.
+      const originalOrder=order; // original order before trade remapping
+      const originalSlot=originalOrder.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
+      // Fall back to effective order slot if no original found (e.g. traded their own away)
+      const slot=originalSlot||eff.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
+      if(!slot)return;
       const pl=players.find(p=>p.name.toLowerCase()===k.player.toLowerCase());
       if(pl)np[slot.overall]=pl;
     });
@@ -1382,27 +1390,15 @@ function App(){
                 </div>
               </div>
 
-              {/* 3. Rankings status */}
-              <div className="card" data-wt="rank-source">
-                <div className="card-title">Rankings</div>
-                <div style={{marginTop:4}}>
-                  {players.length>0?(
-                    <div className="banner ok">
-                      <span style={{fontSize:15}}>✓</span>
-                      <span><strong>{players.length} players</strong> loaded (ECR)</span>
-                      {ranksMeta&&<span style={{fontSize:11,opacity:0.7,marginLeft:4}}>· {ranksMeta.date}</span>}
-                    </div>
-                  ):(
-                    <div className="banner warn">
-                      {fetchState==="loading"?"Loading rankings…":"Rankings not loaded — check your connection."}
-                    </div>
-                  )}
-                </div>
-                {fetchError&&(
-                  <div className="banner warn" style={{marginTop:8}}>
-                    <span>{fetchError}</span>
-                  </div>
-                )}
+              {/* Next button + rankings date */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                {ranksMeta?(
+                  <span data-wt="rank-source" style={{fontSize:11,color:"var(--text3)"}}>
+                    Rankings updated {ranksMeta.date}
+                  </span>
+                ):<span data-wt="rank-source"/>}
+                <button className="primary" onClick={()=>setSetupTab("board")}
+                  style={{padding:"10px 28px",fontSize:14}}>Next: Draft Board →</button>
               </div>
 
               {mode==="mock"&&(
@@ -2544,7 +2540,7 @@ const WT_STEPS=[
   {
     tab:"settings", target:"rank-source",
     title:"Step 2 — Rankings",
-    body:"Shows the current rankings status. Expert Consensus Rankings load automatically when the app opens and are updated periodically by the commissioner.",
+    body:"Rankings come from FantasyPros ECR and update automatically every Tuesday morning. The date they were last updated is shown at the bottom of this page.",
     hl:[],
   },
   {
