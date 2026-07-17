@@ -1126,6 +1126,7 @@ function App(){
   }
 
   function startDraft(){
+    autoRedirected.current=false;
     const order=buildOrder(teams.length,numRounds);
     setDraftOrder(order);
     const tm={};tradedPicks.forEach(t=>{tm[t.fromPick]=teams.indexOf(t.toTeam)});
@@ -1271,8 +1272,10 @@ function App(){
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+  const autoRedirected=useRef(false);
   useEffect(()=>{
-    if(done&&screen==="draft"){
+    if(done&&screen==="draft"&&!autoRedirected.current){
+      autoRedirected.current=true;
       const t=setTimeout(()=>setScreen("results"),600);
       return()=>clearTimeout(t);
     }
