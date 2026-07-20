@@ -1126,7 +1126,6 @@ function App(){
   }
 
   function startDraft(){
-    autoRedirected.current=false;
     const order=buildOrder(teams.length,numRounds);
     setDraftOrder(order);
     const tm={};tradedPicks.forEach(t=>{tm[t.fromPick]=teams.indexOf(t.toTeam)});
@@ -1272,14 +1271,12 @@ function App(){
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
-  const autoRedirected=useRef(false);
   useEffect(()=>{
-    if(done&&screen==="draft"&&!autoRedirected.current){
-      autoRedirected.current=true;
+    if(done&&screen==="draft"){
       const t=setTimeout(()=>setScreen("results"),600);
       return()=>clearTimeout(t);
     }
-  },[done,screen]);
+  },[done]);
 
   const SETUP_TABS=[["settings","Settings"],["board","Draft Board"]];
 
@@ -1942,6 +1939,7 @@ function App(){
           teams={teams} rosters={rosters} myTeam={myTeam}
           picks={picks} order={order} rosterSlots={rosterSlots}
           isFriends={myTeam!=="Yonni"}
+          tradedPicks={tradedPicks} players={players}
           onDraftAgain={()=>{
             clearTimeout(simRef.current);
             setPicks({});setCurrentPickIdx(0);setIsSimming(false);
@@ -1966,8 +1964,9 @@ function App(){
 }
 
 /* ── Results Page ── */
-function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,rosterSlots,isFriends}){
+function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,rosterSlots,isFriends,tradedPicks,players}){
   const[focus,setFocus]=useState(null);
+  const[resultsTab,setResultsTab]=useState("results");
   const canvasRef=useRef(null);
   const[grade]=useState(()=>isFriends?fakeGrade():null);
   const[standings]=useState(()=>
@@ -2078,8 +2077,9 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
     <div className="page results-page">
       <canvas ref={canvasRef} id="roster-canvas"/>
 
+      {/* Header */}
       <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",
-        marginBottom:isFriends?18:24,flexWrap:"wrap",gap:12}}>
+        marginBottom:16,flexWrap:"wrap",gap:12}}>
         <div>
           <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:36,
             textTransform:"uppercase",letterSpacing:"0.04em",lineHeight:1}}>
@@ -2097,7 +2097,27 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         </div>
       </div>
 
-      {isFriends&&grade&&(
+      {/* Tabs */}
+      <div className="tabs" style={{marginBottom:20}}>
+        {[["results","Results"],["board","Draft Board"]].map(([id,lbl])=>(
+          <button key={id} className={`tab${resultsTab===id?" on":""}`}
+            onClick={()=>setResultsTab(id)}>{lbl}</button>
+        ))}
+      </div>
+
+      {/* Draft board tab */}
+      {resultsTab==="board"&&(
+        <LiveBoard
+          order={order} picks={picks} teams={teams}
+          myIdx={teams.indexOf(myTeam)} numRounds={order.length/teams.length}
+          currentPickIdx={order.length} tradedPicks={tradedPicks}
+          players={players} drafted={new Set(Object.values(picks).map(p=>p.name))}
+          onEditPick={null}
+        />
+      )}
+
+      {/* Results tab */}
+      {resultsTab==="results"&&isFriends&&grade&&(
         <div style={{background:"var(--s1)",border:"2px solid var(--mag-border)",
           borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20,
           display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
@@ -2122,8 +2142,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         </div>
       )}
 
-      {/* ── Standings + pos breakdown side by side ── */}
-      {(()=>{
+      {resultsTab==="results"&&(()=>{
         const {starters,bench}=assignSlots(rosters[myTeam]||[]);
         const hasBreakdown=starters.length>0||bench.length>0;
         const hasStandings=standings&&standings.length>0;
@@ -2264,7 +2283,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
       })()}
 
       {/* Focus: single team expanded view */}
-      {focus&&(()=>{
+      {resultsTab==="results"&&focus&&(()=>{
         const {starters,bench}=assignSlots(rosters[focus]||[]);
         const isMe=focus===myTeam;
         const SlotRow=({p,isBench})=>(
@@ -2330,7 +2349,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         );
       })()}
 
-      {/* All teams grid */}
+      {resultsTab==="results"&&(
       <div className="results-grid">
         {teams.map(t=>{
           const roster=rosters[t]||[];
@@ -2369,6 +2388,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
           );
         })}
       </div>
+      )}
     </div>
   );
 }
