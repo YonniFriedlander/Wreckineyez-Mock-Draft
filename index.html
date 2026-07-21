@@ -1273,12 +1273,11 @@ function App(){
       :null
   ,[availAll,picks,order,currentPickIdx,myIdx,numRounds,rosterSlots,tendencies,variability,teams,mode,done,screen]);
 
-  // Auto-load rankings on startup if none saved
+  // Always fetch fresh rankings on startup — ensures date and player list stay current
+  // even when returning users have a cached version in localStorage
   useEffect(()=>{
-    if(players.length===0){
-      const t=setTimeout(()=>fetchLive("ecr"),800);
-      return()=>clearTimeout(t);
-    }
+    const t=setTimeout(()=>fetchLive("ecr"),800);
+    return()=>clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
   useEffect(()=>{
