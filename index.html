@@ -1015,7 +1015,8 @@ function App(){
   const[currentPickIdx,setCurrentPickIdx]=useState(0);
   const[keepers,setKeepers]=useState(saved.keepers||[]);
   const[tradedPicks,setTradedPicks]=useState(saved.tradedPicks||DEF_TRADED_PICKS);
-  const[rosterSlots,setRosterSlots]=useState(saved.rosterSlots||DEF_ROSTER);
+  const savedRoster=saved.rosterSlots||DEF_ROSTER;
+  const[rosterSlots,setRosterSlots]=useState(savedRoster.DST!=null?savedRoster:{...savedRoster,DST:1});
   const[tendencies,setTendencies]=useState(saved.tendencies||DEF_TEND);
   // numRounds = total roster spots (starters + bench). Manual override still possible.
   const derivedRounds=Object.values(rosterSlots).reduce((s,v)=>s+(v||0),0);
