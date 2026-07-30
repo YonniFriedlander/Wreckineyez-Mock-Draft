@@ -505,7 +505,7 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 <script type="text/babel">
 const{useState,useRef,useCallback,useEffect,useMemo}=React;
 
-const POSITIONS=["ALL","QB","RB","WR","TE","RB/WR"];
+const POSITIONS=["ALL","QB","RB","WR","TE","RB/WR","DST"];
 // Name suffixes to skip when extracting last name for display
 const NAME_SUFFIXES=new Set(["jr","jr.","sr","sr.","ii","iii","iv","v","vi"]);
 function lastName(name){
@@ -539,8 +539,8 @@ function useIsMobile(){
 
 const DEF_TEAMS=["Leigh","Stan","Bram","Rob","Bruce","Cory","Liam","James","Pat","Budd","Chow","Evan","Yonni","Aaron"];
 const DEF_MY="Yonni";
-const DEF_ROSTER={QB:1,RB:2,WR:3,TE:1,FLEX:1,BN:5};
-const DEF_TEND={QB:1,RB:1,WR:1,TE:1};
+const DEF_ROSTER={QB:1,RB:2,WR:3,TE:1,FLEX:1,DST:1,BN:5};
+const DEF_TEND={QB:1,RB:1,WR:1,TE:1,DST:1};
 // 2026 traded picks (pre-loaded from league Excel)
 // Leigh=1,Stan=2,Bram=3,Rob=4,Bruce=5,Cory=6,Liam=7,James=8,Pat=9,Budd=10,Chow=11,Evan=12,Yonni=13,Aaron=14
 const DEF_TRADED_PICKS=[
@@ -1440,7 +1440,7 @@ function App(){
                     <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.55}}>
                       How aggressively the league reaches for each position. Right = more aggressive (drafted earlier). Centre = neutral.
                     </p>
-                    {["QB","RB","WR","TE"].map(pos=>{
+                    {["QB","RB","WR","TE","DST"].map(pos=>{
                       const v=tendencies[pos]??1;
                       // Range: v in [0.25, 4.0], neutral at 1.0, scale 4^x
                       const sliderVal=Math.round(50*Math.log(v)/Math.log(4)+50);
@@ -1482,7 +1482,7 @@ function App(){
                   <div className="card">
                     <div className="card-title">Roster slots</div>
                     <div className="g6" style={{maxWidth:480,marginBottom:10}}>
-                      {["QB","RB","WR","TE","FLEX","BN"].map(k=>(
+                      {["QB","RB","WR","TE","FLEX","DST","BN"].map(k=>(
                         <div key={k} className="frow" style={{alignItems:"center"}}>
                           <label style={{textAlign:"center"}}>{k}</label>
                           <input type="number" min={0} max={20} value={rosterSlots[k]??0}
@@ -1492,7 +1492,7 @@ function App(){
                       ))}
                     </div>
                     <span style={{fontSize:11,color:"var(--text3)"}}>
-                      {["QB","RB","WR","TE","FLEX"].reduce((s,k)=>s+(rosterSlots[k]||0),0)} starters + {rosterSlots.BN||0} bench
+                      {["QB","RB","WR","TE","FLEX","DST"].reduce((s,k)=>s+(rosterSlots[k]||0),0)} starters + {rosterSlots.BN||0} bench
                     </span>
                   </div>
                 </>
@@ -1871,19 +1871,20 @@ function App(){
                   </span>
                 </div>
                 {(()=>{
-                  // Show slots in order: QB, RB×n, WR×n, TE, FLEX, BN×n
+                  // Show slots in order: QB, RB×n, WR×n, TE, FLEX, DST, BN×n
                   const POS_ORDER=[
                     ...Array(rosterSlots.QB||1).fill("QB"),
                     ...Array(rosterSlots.RB||2).fill("RB"),
                     ...Array(rosterSlots.WR||3).fill("WR"),
                     ...Array(rosterSlots.TE||1).fill("TE"),
                     ...Array(rosterSlots.FLEX||1).fill("FLEX"),
+                    ...Array(rosterSlots.DST||0).fill("DST"),
                     ...Array(rosterSlots.BN||5).fill("BN"),
                   ];
                   // Assign drafted players to slots greedily (earliest pick first)
                   const sorted=[...myRoster].sort((a,b)=>a.pickNum-b.pickNum);
                   const assigned=[];
-                  const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0,BN:0};
+                  const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0,DST:0,BN:0};
                   const flexElig=new Set(["RB","WR","TE"]);
                   for(const p of sorted){
                     const pos=p.pos;
@@ -1892,7 +1893,7 @@ function App(){
                     else if(flexElig.has(pos)&&counts.FLEX<(rosterSlots.FLEX||0)){counts.FLEX++;assigned.push({...p,slotLabel:"FLEX"});}
                     else{counts.BN++;assigned.push({...p,slotLabel:"BN"});}
                   }
-                  const posColors={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)",BN:"var(--text3)"};
+                  const posColors={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)",DST:"#60a5fa",BN:"var(--text3)"};
                   return POS_ORDER.map((slot,i)=>{
                     const player=assigned.find(p=>p.slotLabel===slot&&!POS_ORDER.slice(0,i).some((_,j)=>POS_ORDER[j]===slot&&assigned.filter(p=>p.slotLabel===slot).indexOf(p)<=POS_ORDER.slice(0,j+1).filter(s=>s===slot).length-1));
                     // Simpler: just render slots in order, matching assigned array
@@ -1997,7 +1998,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
     // Sort by pick order (earliest first)
     const byPick=[...roster].sort((a,b)=>a.pickNum-b.pickNum);
     const slots=[];
-    const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0};
+    const counts={QB:0,RB:0,WR:0,TE:0,FLEX:0,DST:0};
     const flexEligible=new Set(["RB","WR","TE"]);
     const benched=[];
 
@@ -2005,7 +2006,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
       const pos=p.pos;
       const slotMax=rosterSlots[pos]||0;
       const flexMax=rosterSlots.FLEX||0;
-      if(counts[pos]<slotMax){
+      if(counts[pos]!==undefined&&counts[pos]<slotMax){
         counts[pos]++;
         slots.push({...p,slotLabel:pos});
       } else if(flexEligible.has(pos)&&counts.FLEX<flexMax){
@@ -2016,7 +2017,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
       }
     }
     // Sort starters by position priority
-    const PRI={QB:0,RB:1,WR:2,TE:3,FLEX:4};
+    const PRI={QB:0,RB:1,WR:2,TE:3,FLEX:4,DST:5};
     slots.sort((a,b)=>(PRI[a.slotLabel]??9)-(PRI[b.slotLabel]??9)||a.pickNum-b.pickNum);
     return{starters:slots,bench:benched};
   }
@@ -2166,7 +2167,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
         const hasStandings=standings&&standings.length>0;
         if(!hasStandings&&!hasBreakdown)return null;
 
-        const POS_COLORS={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)"};
+        const POS_COLORS={QB:"#FACC15",RB:"var(--teal)",WR:"var(--purp)",TE:"#F472B6",FLEX:"var(--text2)",DST:"#60a5fa"};
 
         function PlayerRow({p,isBench}){
           const proj=isBench?null:Math.round(adpExpectedPts(p.pos,p.rank||p.pickNum||100));
@@ -2188,7 +2189,7 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
           );
         }
 
-        const posOrder=["QB","RB","WR","TE","FLEX"];
+        const posOrder=["QB","RB","WR","TE","FLEX","DST"];
         const grouped={};
         starters.forEach(p=>{if(!grouped[p.slotLabel])grouped[p.slotLabel]=[];grouped[p.slotLabel].push(p);});
         const totalStarter=starters.reduce((s,p)=>s+adpExpectedPts(p.pos,p.rank||p.pickNum||100),0);
