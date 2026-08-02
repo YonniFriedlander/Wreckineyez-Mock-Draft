@@ -1447,30 +1447,39 @@ function App(){
                   <div className="card">
                     <div className="card-title">League tendencies</div>
                     <p style={{fontSize:12,color:"var(--text3)",marginBottom:16,lineHeight:1.55}}>
-                      How aggressively the league reaches for each position. Right = more aggressive (drafted earlier). Centre = neutral.
+                      How aggressively the league reaches for each position.
                     </p>
                     {["QB","RB","WR","TE","DST"].map(pos=>{
                       const v=tendencies[pos]??1;
-                      // Range: v in [0.25, 4.0], neutral at 1.0, scale 4^x
-                      const sliderVal=Math.round(50*Math.log(v)/Math.log(4)+50);
-                      const displaySlider=100-sliderVal; // flip: right=aggressive=low v
-                      const lbl=v<=0.70?"Very aggressive":v<=0.87?"Aggressive":v<=0.935?"Slight lean":v<=1.15?"Neutral":v<=1.43?"Slight avoid":v<=1.82?"Avoid":"Strong avoid";
-                      const isAgg=v<0.935,isAvoid=v>1.15;
+                      const OPTS=[
+                        {lbl:"Very aggressive", v:0.55},
+                        {lbl:"Aggressive",       v:0.70},
+                        {lbl:"Slight lean",      v:0.87},
+                        {lbl:"Neutral",          v:1.00},
+                        {lbl:"Slight avoid",     v:1.15},
+                        {lbl:"Avoid",            v:1.43},
+                        {lbl:"Strong avoid",     v:1.82},
+                      ];
+                      // Find closest matching option
+                      const closest=OPTS.reduce((best,o)=>Math.abs(o.v-v)<Math.abs(best.v-v)?o:best,OPTS[3]);
+                      const isAgg=closest.v<1.0,isAvoid=closest.v>1.0;
                       return(
-                        <div key={pos} style={{display:"grid",gridTemplateColumns:"44px 1fr 160px",gap:12,alignItems:"center",marginBottom:12}}>
+                        <div key={pos} style={{display:"grid",gridTemplateColumns:"44px 1fr",gap:12,alignItems:"center",marginBottom:10}}>
                           <PB pos={pos} posRank={pos} style={{textAlign:"center",padding:"4px 0",display:"block",fontSize:12}}/>
-                          <input type="range" min={0} max={100} step={1} value={displaySlider}
-                            style={{maxWidth:300}}
+                          <select
+                            value={closest.lbl}
+                            style={{
+                              fontSize:12,fontWeight:600,
+                              color:isAgg?"var(--go)":isAvoid?"var(--warn)":"var(--text2)",
+                              background:"var(--s2)",border:"1px solid var(--border2)",
+                              borderRadius:"var(--r)",padding:"6px 10px",cursor:"pointer",
+                            }}
                             onChange={e=>{
-                              const ds=parseInt(e.target.value);
-                              const sv=100-ds;
-                              const newV=Math.pow(4,(sv-50)/50);
-                              setTendencies(p=>({...p,[pos]:Math.round(newV*100)/100}));
-                            }}/>
-                          <span style={{fontSize:12,fontWeight:700,
-                            color:isAgg?"var(--go)":isAvoid?"var(--warn)":"var(--text3)",textAlign:"right"}}>
-                            {lbl}
-                          </span>
+                              const opt=OPTS.find(o=>o.lbl===e.target.value);
+                              if(opt)setTendencies(p=>({...p,[pos]:opt.v}));
+                            }}>
+                            {OPTS.map(o=><option key={o.lbl} value={o.lbl}>{o.lbl}</option>)}
+                          </select>
                         </div>
                       );
                     })}
