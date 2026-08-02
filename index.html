@@ -911,18 +911,26 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
           </thead>
           <tbody>
             {rounds.map(r=>{
-              // Use arrays per team-slot so multiple traded picks landing on the same
-              // team in the same round don't overwrite each other.
-              const byTeam={};
+              // Always show picks in original owner's column
+              // origOrder gives us the pre-trade teamIdx for each pick
+              const byOrigTeam={};
               order.filter(p=>p.round===r).forEach(p=>{
-                if(!byTeam[p.teamIdx])byTeam[p.teamIdx]=[];
-                byTeam[p.teamIdx].push(p);
+                const trade=tradeByPick[p.overall];
+                // Original team = derive from pick number position in snake
+                // Pick overall in round r: odd round = (r-1)*14+pos, even = (r-1)*14+(15-pos)
+                // Reverse: for odd round, origIdx = (overall-(r-1)*14)-1
+                //          for even round, origIdx = 14-(overall-(r-1)*14)
+                const posInRound=p.overall-(r-1)*14;
+                const origIdx=r%2===1?posInRound-1:teams.length-posInRound;
+                const col=origIdx>=0&&origIdx<teams.length?origIdx:p.teamIdx;
+                if(!byOrigTeam[col])byOrigTeam[col]=[];
+                byOrigTeam[col].push(p);
               });
               return(
                 <tr key={r}>
                   <td className="rh">{r}</td>
                   {teams.map((_,i)=>{
-                    const cellPicks=byTeam[i]||[];
+                    const cellPicks=byOrigTeam[i]||[];
                     if(!cellPicks.length)return<td key={i}/>;
                     return(
                       <td key={i} style={{padding:cellPicks.length>1?"3px 4px":undefined}}>
@@ -1751,6 +1759,7 @@ function App(){
             <LiveBoard order={order} picks={picks} teams={teams} myIdx={myIdx}
               numRounds={numRounds} currentPickIdx={currentPickIdx} tradedPicks={tradedPicks}
               players={players} drafted={drafted}
+                              picks={picks} teams={teams} order={order}
               onEditPick={(overall,newPlayer)=>{
                 if(newPlayer===null){
                   // un-assign: remove pick
@@ -2893,7 +2902,36 @@ function QueueList({queue,setQueue,drafted,canPick,onPick}){
 /* ── Available panel ── */
 function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,setSelPlayer,
                      canPick,curTeam,mode,onPick,survival,lastPick,isSimming,
-                     playerNotes,setPlayerNotes,queue,setQueue}){
+                     playerNotes,setPlayerNotes,queue,setQueue,
+                     picks,teams,order,drafted}){
+
+  // Build a lookup: player name → team that drafted them
+  const draftedByTeam=useMemo(()=>{
+    const map={};
+    if(!order||!picks||!teams)return map;
+    order.forEach(pick=>{
+      if(picks[pick.overall]){
+        map[picks[pick.overall].name]=teams[pick.teamIdx];
+      }
+    });
+    return map;
+  },[picks,teams,order]);
+
+  // When searching, also show drafted players (but greyed out with team label)
+  const displayList=useMemo(()=>{
+    if(!search||search.length<2) return avail;
+    const q=search.toLowerCase();
+    // Players already in avail (undrafted, matching search)
+    const undrafted=avail.filter(p=>
+      p.name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q)
+    );
+    // Drafted players matching search
+    if(!picks) return undrafted;
+    const draftedMatches=Object.values(picks)
+      .filter(p=>p.name.toLowerCase().includes(q)||p.team?.toLowerCase().includes(q))
+      .map(p=>({...p,isDrafted:true}));
+    return [...undrafted,...draftedMatches];
+  },[avail,search,picks]);
 
   const isMobile=useIsMobile();
   const[noteSheetPlayer,setNoteSheetPlayer]=useState(null); // player name being edited in mobile sheet
@@ -2991,7 +3029,9 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
 
       {isMobile?(
         <div className="pcard-list">
-          {avail.slice(0,130).map(p=>{
+          {displayList.slice(0,130).map(p=>{
+            const isDrafted=!!p.isDrafted;
+            const draftedBy=isDrafted?draftedByTeam[p.name]:null;
             const sel=selPlayer?.name===p.name;
             const sv=survival?.[p.name]??null;
             const pct=sv!=null?Math.round(sv*100):null;
@@ -3000,14 +3040,22 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
             const hasNote=!!(playerNotes?.[p.name]);
             return(
               <div key={p.name} className={`pcard${sel?" sel":""}`}
-                onClick={()=>setSelPlayer(sel?null:p)}>
+                style={isDrafted?{opacity:0.5}:{}}
+                onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
                 {/* Single row: rank · name · pos · team/bye · note · queue · pick */}
                 <div style={{display:"flex",alignItems:"center",gap:6}} onClick={e=>e.stopPropagation()}>
-                  <span className="pcard-rank" onClick={()=>setSelPlayer(sel?null:p)}>#{p.rank}</span>
-                  <span className="pcard-name" style={{flex:1,cursor:"pointer"}}
-                    onClick={()=>setSelPlayer(sel?null:p)}>{p.name}</span>
+                  <span className="pcard-rank" onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>#{p.rank}</span>
+                  <span className="pcard-name" style={{flex:1,cursor:isDrafted?"default":"pointer"}}
+                    onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>{p.name}</span>
                   <PB pos={p.pos} posRank={p.posRank}/>
-                  <span style={{fontSize:10,color:"var(--text3)",flexShrink:0,whiteSpace:"nowrap"}}>{p.team}</span>
+                  {isDrafted?(
+                    <span style={{fontSize:10,color:"var(--warn)",flexShrink:0,whiteSpace:"nowrap",fontWeight:700}}>
+                      {draftedBy}
+                    </span>
+                  ):(
+                    <span style={{fontSize:10,color:"var(--text3)",flexShrink:0,whiteSpace:"nowrap"}}>{p.team}</span>
+                  )}
+                  {!isDrafted&&<>
                   {/* Note icon button */}
                   <button
                     className={`pcard-note-btn${hasNote?" has-note":""}`}
@@ -3033,9 +3081,10 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
                       {mode==="mock"?"Pick ✓":"Draft"}
                     </button>
                   )}
+                  </>}
                 </div>
                 {/* Availability bar — compact, only when survival data exists */}
-                {showSurvival&&tier!=null&&(
+                {!isDrafted&&showSurvival&&tier!=null&&(
                   <div className="pcard-avail">
                     <div className="pcard-avail-bar">
                       <div style={{height:"100%",width:`${pct}%`,borderRadius:4,
@@ -3099,22 +3148,29 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
             </tr>
           </thead>
           <tbody>
-            {avail.slice(0,130).map(p=>{
+            {displayList.slice(0,130).map(p=>{
+              const isDrafted=!!p.isDrafted;
+              const draftedBy=isDrafted?draftedByTeam[p.name]:null;
               const sel=selPlayer?.name===p.name;
               const sv=survival?.[p.name]??null;
               const pct=sv!=null?Math.round(sv*100):null;
               const tier=sv!=null?tierFor(sv):null;
               const inQueue=queue?.includes(p.name);
               return(
-                <tr key={p.name} className={`pr${sel?" sel":""}`} onClick={()=>setSelPlayer(sel?null:p)}>
+                <tr key={p.name} className={`pr${sel?" sel":""}`}
+                  style={isDrafted?{opacity:0.45}:{}}
+                  onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
                   <td style={{color:"var(--text3)",fontSize:12,fontWeight:600}}>{p.rank}</td>
                   <td style={{fontWeight:sel?700:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{p.name}</td>
                   <td><PB pos={p.pos} posRank={p.posRank}/></td>
-                  <td style={{color:"var(--text2)",fontSize:12,fontWeight:500}}>{p.team}</td>
-                  <td style={{color:"var(--text3)",fontSize:12}}>{p.bye}</td>
+                  <td style={{fontSize:12,fontWeight:isDrafted?700:500,
+                    color:isDrafted?"var(--warn)":"var(--text2)"}}>
+                    {isDrafted?draftedBy:p.team}
+                  </td>
+                  <td style={{color:"var(--text3)",fontSize:12}}>{isDrafted?"—":p.bye}</td>
                   {showSurvival&&(
                     <td style={{padding:"6px 10px"}}>
-                      {tier!=null?(
+                      {!isDrafted&&tier!=null?(
                         <div style={{display:"flex",alignItems:"center",gap:7}}>
                           <div style={{flex:1,height:6,background:"var(--s3)",borderRadius:3,overflow:"hidden"}}>
                             <div style={{
@@ -3239,28 +3295,19 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
         </thead>
         <tbody>
           {rounds.map(r=>{
-            const byEffective={};
+            // Always show picks in original owner's column
             const byOriginal={};
             order.filter(p=>p.round===r).forEach(p=>{
-              const isTrade=tradedPicks&&tradedPicks.some(t=>t.fromPick===p.overall);
-              const isDrafted=!!picks[p.overall];
-              if(isTrade&&!isDrafted){
-                const oi=origTeamIdx(p.overall);
-                if(!byOriginal[oi])byOriginal[oi]=[];
-                byOriginal[oi].push(p);
-              } else {
-                if(!byEffective[p.teamIdx])byEffective[p.teamIdx]=[];
-                byEffective[p.teamIdx].push(p);
-              }
+              const oi=origTeamIdx(p.overall);
+              if(!byOriginal[oi])byOriginal[oi]=[];
+              byOriginal[oi].push(p);
             });
 
             return(
               <tr key={r}>
                 <td className="rh">{r}</td>
                 {teams.map((_,i)=>{
-                  const effPicks=byEffective[i]||[];
-                  const origPicks=byOriginal[i]||[];
-                  const allPicks=[...effPicks,...origPicks];
+                  const allPicks=byOriginal[i]||[];
                   if(!allPicks.length)return<td key={i} className={i===myIdx?"mine-col":""}/>;
                   const isCurCell=allPicks.some(p=>order.findIndex(o=>o.overall===p.overall)===currentPickIdx);
                   return(
@@ -3272,10 +3319,8 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
                       {allPicks.map(pick=>{
                         const player=picks[pick.overall];
                         const isTrade=tradedPicks&&tradedPicks.some(t=>t.fromPick===pick.overall);
-                        const origIdx=origTeamIdx(pick.overall);
-                        const origName=teams[origIdx]||"";
-                        const newOwner=teams[pick.teamIdx]||"";
-                        const isOriginalOwner=(origIdx===i);
+                        const trade=tradedPicks&&tradedPicks.find(t=>t.fromPick===pick.overall);
+                        const newOwner=trade?trade.toTeam:"";
                         return(
                           <div key={pick.overall} className="bcell">
                             {player?(
@@ -3284,13 +3329,13 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
                                   <PB pos={player.pos} posRank={player.posRank||player.pos} style={{fontSize:8,padding:"0 3px"}}/>
                                 </div>
                                 <span className="bn">{lastName(player.name)}</span>
-                                {isTrade&&<span className="bm" style={{color:"var(--warn)",fontSize:7}}>via {teams[origTeamIdx(pick.overall)]?.slice(0,4).toUpperCase()}</span>}
+                                {isTrade&&<span className="bm" style={{color:"var(--warn)",fontSize:7}}>to {newOwner.slice(0,5).toUpperCase()}</span>}
                               </>
                             ):(
-                              isTrade&&isOriginalOwner?(
+                              isTrade?(
                                 <>
                                   <span className="bm" style={{color:"var(--warn)"}}>→</span>
-                                  <span className="bn" style={{color:"var(--warn)"}}>{teams[pick.teamIdx]?.slice(0,5)}</span>
+                                  <span className="bn" style={{color:"var(--warn)"}}>{newOwner.slice(0,6)}</span>
                                 </>
                               ):(
                                 <span className="bnum">#{pick.overall}</span>
