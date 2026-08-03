@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wreckineyez — League History</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--s1:#1a1f2e;--s2:#1e2535;--s3:#252d40;
+  --border:#2d3748;--border2:#374151;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;
+  --teal:#2dd4bf;--teal-dim:rgba(45,212,191,0.08);--teal-border:rgba(45,212,191,0.25);
+  --mag:#e8366e;--gold:#f59e0b;--gold-dim:rgba(245,158,11,0.12);
+  --purp:#a78bfa;--r:6px;--rl:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:0 0 80px}
+
+/* Header */
+.site-header{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  padding:16px 24px;display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:100;
+}
+
+.container{max-width:1000px;margin:0 auto;padding:0 20px}
+
+/* Section */
+.section-label{
+  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--text);
+  margin:48px 0 4px;
+}
+.section-sub{font-size:11px;color:var(--text3);margin-bottom:18px;letter-spacing:0.02em;}
+
+/* Championship Wall */
+.champ-wall{
+  background:linear-gradient(135deg,var(--s1) 0%,rgba(245,158,11,0.06) 100%);
+  border:1px solid rgba(245,158,11,0.2);border-radius:var(--rl);
+  padding:22px;margin-top:28px;
+}
+.champ-wall-title{font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--gold);margin-bottom:14px;}
+.champ-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.champ-card{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:var(--gold-dim);border:1px solid rgba(245,158,11,0.15);
+  border-radius:var(--r);padding:9px 13px;min-width:68px;
+  cursor:pointer;transition:all 0.15s;position:relative;
+}
+.champ-card:hover{background:rgba(245,158,11,0.22);border-color:rgba(245,158,11,0.4);transform:translateY(-1px);}
+.champ-card.active-card{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.6);
+  box-shadow:0 0 0 2px rgba(245,158,11,0.3);}
+.champ-year{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.04em;}
+.champ-trophy{font-size:18px;line-height:1.2;}
+.champ-name{font-size:11px;font-weight:800;text-align:center;}
+
+/* Season detail modal */
+.season-detail{
+  background:var(--s1);border:1px solid var(--border2);border-radius:var(--rl);
+  padding:20px;margin-top:12px;
+  animation:fadeIn 0.18s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.season-detail-header{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
+  padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.season-detail-year{font-family:'Barlow Condensed',sans-serif;font-size:32px;
+  font-weight:900;color:var(--gold);}
+.season-detail-champ{font-size:13px;font-weight:700;}
+.season-detail-champ span{font-size:18px;margin-right:4px;}
+.season-close{margin-left:auto;background:none;border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text3);padding:4px 10px;cursor:pointer;font-size:12px;}
+.season-close:hover{background:var(--s3);color:var(--text);}
+
+.season-table{width:100%;border-collapse:collapse;font-size:12px;}
+.season-table th{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;
+  color:var(--text3);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border2);}
+.season-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.season-table tr:last-child td{border-bottom:none;}
+.season-table tr:hover td{background:var(--s2);}
+.pos-badge{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:800;
+  background:var(--s3);color:var(--text3);}
+.po-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;margin-left:4px;}
+.po-1{background:rgba(245,158,11,0.15);color:var(--gold);}
+.po-2{background:rgba(100,116,139,0.12);color:var(--text3);}
+.po-3{background:rgba(100,116,139,0.12);color:var(--text3);}
+.po-4{background:rgba(100,116,139,0.12);color:var(--text3);}
+
+/* Leaderboards */
+.lb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.lb-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:16px;}
+.lb-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text3);margin-bottom:10px;}
+.lb-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:12px;}
+.lb-row:last-child{border-bottom:none;}
+.lb-rank{font-size:10px;color:var(--text3);width:16px;flex-shrink:0;text-align:right;}
+.lb-name{flex:1;font-weight:600;}
+.lb-name.former{color:var(--text3)!important;}
+.lb-val{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.lb-val.gold{color:var(--gold);}
+.lb-val.teal{color:var(--teal);}
+.lb-val.mag{color:var(--mag);}
+
+/* Weekly records */
+.weekly-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.weekly-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:16px;}
+.weekly-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;}
+.weekly-title.hi{color:var(--teal);}
+.weekly-title.lo{color:var(--teal);}
+.weekly-row{display:flex;align-items:center;gap:6px;padding:4px 0;
+  border-bottom:1px solid var(--border);font-size:12px;}
+.weekly-row:last-child{border-bottom:none;}
+.weekly-year{font-size:10px;color:var(--text3);width:34px;flex-shrink:0;}
+.weekly-wk{font-size:10px;color:var(--text3);width:26px;flex-shrink:0;}
+.weekly-team{flex:1;font-weight:600;}
+.weekly-pts{font-weight:700;font-variant-numeric:tabular-nums;}
+.weekly-pts.hi{color:var(--teal);}
+.weekly-pts.lo{color:var(--teal);}
+
+@media(max-width:600px){
+  .weekly-grid{grid-template-columns:1fr;}
+  .lb-grid{grid-template-columns:1fr 1fr;}
+  .section-label{font-size:22px;}
+  .champ-card{min-width:60px;padding:7px 10px;}
+}
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <a href="index.html" style="display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0;">
+    <div style="width:34px;height:34px;border-radius:7px;
+      background:linear-gradient(135deg,#a78bfa 0%,#e8366e 55%,#2dd4bf 100%);
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      box-shadow:0 0 14px rgba(232,54,110,0.4);">
+      <svg width="26" height="18" viewBox="0 0 26 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="13" cy="9" rx="11.5" ry="7" fill="rgba(255,255,255,0.12)" stroke="white" stroke-width="1.3"/>
+        <line x1="13" y1="3" x2="13" y2="15" stroke="white" stroke-width="1.1" stroke-dasharray="2.2 1.8"/>
+        <line x1="10.5" y1="5.5" x2="15.5" y2="5.5" stroke="white" stroke-width="1.1"/>
+        <line x1="10.5" y1="9" x2="15.5" y2="9" stroke="white" stroke-width="1.1"/>
+        <line x1="10.5" y1="12.5" x2="15.5" y2="12.5" stroke="white" stroke-width="1.1"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:21px;letter-spacing:0.06em;text-transform:uppercase;color:#f1f5f9;line-height:1;">Wreckineyez</div>
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#64748b;line-height:1;">History</div>
+    </div>
+  </a>
+  <a href="index.html" style="margin-left:auto;background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:5px 13px;
+    font-size:12px;font-weight:700;color:#94a3b8;text-decoration:none;white-space:nowrap;">
+    ← Draft
+  </a>
+</div>
+
+<div class="container">
+
+  <!-- Championship Wall -->
+  <div class="section-label" style="margin-top:32px">🏆 Champions</div>
+  <div class="section-sub">Click any year to see that season's standings</div>
+  <div class="champ-wall">
+    <div class="champ-wall-title">14 seasons · 11 different champions</div>
+    <div class="champ-grid" id="champ-grid"></div>
+  </div>
+  <div id="season-detail-container"></div>
+
+  <!-- Leaderboards -->
+  <div class="section-label">Leaderboards</div>
+  <div class="section-sub">All-time stats across all managers</div>
+  <div class="lb-grid" id="lb-grid"></div>
+
+  <!-- Weekly Records -->
+  <div class="section-label">Weekly Records</div>
+  <div class="section-sub">Highest and lowest single-week scores by season</div>
+  <div class="weekly-grid">
+    <div class="weekly-card">
+      <div class="weekly-title hi">📈 Season High Score</div>
+      <div id="hi-scores"></div>
+    </div>
+    <div class="weekly-card">
+      <div class="weekly-title lo">📉 Season Low Score</div>
+      <div id="lo-scores"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────────────────────────────
+
+const TEAM_COLORS = {
+  Yonni:'#e8366e',Aaron:'#2dd4bf',Chow:'#f59e0b',Evan:'#a78bfa',
+  Rob:'#60a5fa',Budd:'#34d399',Bram:'#fb923c',James:'#f472b6',
+  Pat:'#818cf8',Cory:'#4ade80',Leigh:'#e879f9',Liam:'#38bdf8',
+  Stan:'#fbbf24',Bruce:'#94a3b8',
+  Smitty:'#84cc16',Perry:'#e2e8f0',Curtis:'#67e8f9',Steve:'#fda4af',
+  Joe:'#c4b5fd',Ian:'#86efac',Andrew:'#fcd34d',David:'#f9a8d4',
+  Jim:'#a5f3fc',
+};
+const ACTIVE = new Set(['Yonni','Aaron','Chow','Evan','Rob','Budd','Bram','James','Pat','Cory','Leigh','Liam','Stan','Bruce']);
+
+const SEASONS = [
+  {year:2025,teams:14,data:[
+    {o:'Aaron',rs:1,po:4,w:12,pts:1517.93},{o:'Yonni',rs:2,po:3,w:10,pts:1507.92},
+    {o:'Evan',rs:3,po:2,w:9,pts:1325.36},{o:'Chow',rs:4,po:1,w:9,pts:1303.95},
+    {o:'Budd',rs:5,po:null,w:8.5,pts:1242.48},{o:'Pat',rs:6,po:null,w:7.5,pts:1285.58},
+    {o:'James',rs:7,po:null,w:7.5,pts:1228.19},{o:'Liam',rs:8,po:null,w:7,pts:1223.92},
+    {o:'Bram',rs:9,po:null,w:6,pts:1222.83},{o:'Rob',rs:10,po:null,w:5,pts:1059.33},
+    {o:'Leigh',rs:11,po:null,w:4.5,pts:1191.02},{o:'Stan',rs:12,po:null,w:4.5,pts:1129.14},
+    {o:'Cory',rs:13,po:null,w:4.5,pts:1042.33},{o:'Bruce',rs:14,po:null,w:3,pts:1131.76},
+  ]},
+  {year:2024,teams:12,data:[
+    {o:'Stan',rs:1,po:2,w:11,pts:1370.45},{o:'Leigh',rs:2,po:null,w:9,pts:1204.72},
+    {o:'Rob',rs:3,po:null,w:8,pts:1451.43},{o:'James',rs:4,po:4,w:8,pts:1304.12},
+    {o:'Yonni',rs:5,po:null,w:7,pts:1395.85},{o:'Cory',rs:6,po:1,w:7,pts:1312.6},
+    {o:'Bram',rs:7,po:3,w:7,pts:1305.69},{o:'Pat',rs:8,po:null,w:6,pts:1349.71},
+    {o:'Chow',rs:9,po:null,w:6,pts:1131.5},{o:'Aaron',rs:10,po:null,w:5,pts:1351.46},
+    {o:'Evan',rs:11,po:null,w:5,pts:1295.17},{o:'Budd',rs:12,po:null,w:5,pts:1267.57},
+  ]},
+  {year:2023,teams:12,data:[
+    {o:'Evan',rs:1,po:4,w:11,pts:1374.75},{o:'Yonni',rs:2,po:null,w:10,pts:1475.06},
+    {o:'Chow',rs:3,po:3,w:9,pts:1322.16},{o:'Stan',rs:4,po:1,w:8,pts:1311.38},
+    {o:'Bram',rs:5,po:null,w:8,pts:1270.15},{o:'James',rs:6,po:null,w:7,pts:1272.4},
+    {o:'Leigh',rs:7,po:2,w:7,pts:1186.73},{o:'Budd',rs:8,po:null,w:6,pts:1322.85},
+    {o:'Rob',rs:9,po:null,w:5,pts:1285.3},{o:'Pat',rs:10,po:null,w:5,pts:1274.83},
+    {o:'Aaron',rs:11,po:null,w:4,pts:1280.68},{o:'Cory',rs:12,po:null,w:4,pts:1089.15},
+  ]},
+  {year:2022,teams:12,data:[
+    {o:'Rob',rs:1,po:4,w:12,pts:1522.17},{o:'Cory',rs:2,po:3,w:10,pts:1315.74},
+    {o:'Yonni',rs:3,po:1,w:9,pts:1421.53},{o:'Evan',rs:4,po:2,w:8,pts:1388.36},
+    {o:'Stan',rs:5,po:null,w:8,pts:1126.7},{o:'Aaron',rs:6,po:null,w:7,pts:1338.41},
+    {o:'Pat',rs:7,po:null,w:7,pts:1255.5},{o:'Leigh',rs:8,po:null,w:7,pts:1167.96},
+    {o:'Chow',rs:9,po:null,w:6,pts:1351.1},{o:'Bram',rs:10,po:null,w:4,pts:1335.31},
+    {o:'James',rs:11,po:null,w:3,pts:1267.96},{o:'Budd',rs:12,po:null,w:3,pts:1029.5},
+  ]},
+  {year:2021,teams:12,data:[
+    {o:'Chow',rs:1,po:1,w:10,pts:1533.66},{o:'Leigh',rs:2,po:null,w:9,pts:1416.24},
+    {o:'James',rs:3,po:4,w:9,pts:1372.4},{o:'Pat',rs:4,po:3,w:9,pts:1335.53},
+    {o:'Cory',rs:5,po:null,w:8,pts:1378.17},{o:'Aaron',rs:6,po:null,w:8,pts:1344.42},
+    {o:'Budd',rs:7,po:2,w:7,pts:1374.94},{o:'Yonni',rs:8,po:null,w:7,pts:1288.38},
+    {o:'Evan',rs:9,po:null,w:5,pts:1305.11},{o:'Rob',rs:10,po:null,w:5,pts:1276.1},
+    {o:'Bram',rs:11,po:null,w:4,pts:1221.02},{o:'Stan',rs:12,po:null,w:3,pts:1178.75},
+  ]},
+  {year:2020,teams:12,data:[
+    {o:'Rob',rs:1,po:null,w:11,pts:1345.74},{o:'Yonni',rs:2,po:1,w:9,pts:1361.38},
+    {o:'Evan',rs:3,po:null,w:9,pts:1273.47},{o:'Budd',rs:4,po:2,w:8,pts:1391.48},
+    {o:'Bram',rs:5,po:null,w:8,pts:1334.02},{o:'Chow',rs:6,po:3,w:8,pts:1292.7},
+    {o:'Leigh',rs:7,po:null,w:5,pts:1194.07},{o:'Stan',rs:8,po:4,w:5,pts:1118.12},
+    {o:'Aaron',rs:9,po:null,w:4,pts:1324.81},{o:'Pat',rs:10,po:null,w:4,pts:1160.86},
+    {o:'Cory',rs:11,po:null,w:4,pts:1103.78},{o:'James',rs:12,po:null,w:3,pts:1102.22},
+  ]},
+  {year:2019,teams:12,data:[
+    {o:'Aaron',rs:1,po:1,w:11,pts:1405.68},{o:'Yonni',rs:2,po:3,w:10,pts:1280.96},
+    {o:'Bram',rs:3,po:null,w:10,pts:1275.64},{o:'Chow',rs:4,po:null,w:9,pts:1364.26},
+    {o:'Evan',rs:5,po:4,w:7,pts:1351.28},{o:'Pat',rs:6,po:2,w:6,pts:1120.65},
+    {o:'Perry',rs:7,po:null,w:5,pts:1323.34},{o:'Cory',rs:8,po:null,w:5,pts:1148.33},
+    {o:'Budd',rs:9,po:null,w:4,pts:1205.64},{o:'Curtis',rs:10,po:null,w:4,pts:1130.0},
+    {o:'Smitty',rs:11,po:null,w:4,pts:1129.27},{o:'Rob',rs:12,po:null,w:3,pts:1082.26},
+  ]},
+  {year:2018,teams:12,data:[
+    {o:'Aaron',rs:1,po:null,w:11,pts:1536.22},{o:'Budd',rs:2,po:4,w:9,pts:1524.9},
+    {o:'Yonni',rs:3,po:null,w:9,pts:1290.6},{o:'Smitty',rs:4,po:null,w:8,pts:1284.26},
+    {o:'Chow',rs:5,po:3,w:7,pts:1360.4},{o:'Cory',rs:6,po:2,w:7,pts:1290.79},
+    {o:'Rob',rs:7,po:null,w:6,pts:1302.68},{o:'Pat',rs:8,po:1,w:5,pts:1295.46},
+    {o:'Curtis',rs:9,po:null,w:5,pts:1102.37},{o:'Perry',rs:10,po:null,w:4,pts:1186.86},
+    {o:'Evan',rs:11,po:null,w:4,pts:1109.87},{o:'Bram',rs:12,po:null,w:3,pts:1114.36},
+  ]},
+  {year:2017,teams:12,data:[
+    {o:'Chow',rs:1,po:1,w:10,pts:1301.18},{o:'Smitty',rs:2,po:2,w:10,pts:1204.12},
+    {o:'Yonni',rs:3,po:3,w:9,pts:1278.96},{o:'Evan',rs:4,po:null,w:9,pts:1151.29},
+    {o:'Cory',rs:5,po:4,w:8,pts:1121.32},{o:'Budd',rs:6,po:null,w:7,pts:1133.57},
+    {o:'Aaron',rs:7,po:null,w:6,pts:1138.12},{o:'Bram',rs:8,po:null,w:5,pts:1194.01},
+    {o:'Rob',rs:9,po:null,w:5,pts:1162.18},{o:'Pat',rs:10,po:null,w:4,pts:1085.0},
+    {o:'Curtis',rs:11,po:null,w:3,pts:1005.22},{o:'Perry',rs:12,po:null,w:2,pts:1053.71},
+  ]},
+  {year:2016,teams:12,data:[
+    {o:'Bram',rs:1,po:2,w:10,pts:1364.07},{o:'Smitty',rs:2,po:1,w:9,pts:1253.16},
+    {o:'Aaron',rs:3,po:null,w:8,pts:1375.84},{o:'Chow',rs:4,po:null,w:8,pts:1278.68},
+    {o:'Perry',rs:5,po:4,w:7,pts:1162.16},{o:'Curtis',rs:6,po:3,w:7,pts:1242.59},
+    {o:'Rob',rs:7,po:null,w:6,pts:1181.0},{o:'Yonni',rs:8,po:null,w:5,pts:1235.0},
+    {o:'Budd',rs:9,po:null,w:5,pts:1143.07},{o:'Cory',rs:10,po:null,w:5,pts:1141.6},
+    {o:'Pat',rs:11,po:null,w:4,pts:1038.04},{o:'Joe',rs:12,po:null,w:4,pts:1160.34},
+  ]},
+  {year:2015,teams:12,data:[
+    {o:'Smitty',rs:1,po:null,w:9,pts:1295.34},{o:'Bram',rs:2,po:null,w:8,pts:1254.09},
+    {o:'Pat',rs:3,po:null,w:8,pts:1088.67},{o:'Budd',rs:4,po:null,w:7,pts:1258.24},
+    {o:'Rob',rs:5,po:1,w:7,pts:1214.17},{o:'Cory',rs:6,po:4,w:6,pts:1225.34},
+    {o:'Perry',rs:7,po:2,w:6,pts:1280.89},{o:'Joe',rs:8,po:3,w:6,pts:1118.06},
+    {o:'Aaron',rs:9,po:null,w:6,pts:1153.08},{o:'Yonni',rs:10,po:null,w:6,pts:1302.38},
+    {o:'Curtis',rs:11,po:null,w:5,pts:1156.03},{o:'Steve',rs:12,po:null,w:4,pts:1196.34},
+  ]},
+  {year:2014,teams:12,data:[
+    {o:'Aaron',rs:1,po:4,w:10,pts:1477.2},{o:'Rob',rs:2,po:3,w:8,pts:1363.49},
+    {o:'Yonni',rs:3,po:null,w:8,pts:1275.46},{o:'Perry',rs:4,po:2,w:8,pts:1227.07},
+    {o:'Steve',rs:5,po:null,w:8,pts:1116.95},{o:'Budd',rs:6,po:1,w:7,pts:1290.21},
+    {o:'Curtis',rs:7,po:null,w:6,pts:1232.01},{o:'Cory',rs:8,po:null,w:6,pts:1098.24},
+    {o:'Bram',rs:9,po:null,w:5,pts:1246.52},{o:'Pat',rs:10,po:null,w:4,pts:1101.41},
+    {o:'Smitty',rs:11,po:null,w:4,pts:1042.58},{o:'Joe',rs:12,po:null,w:4,pts:1170.07},
+  ]},
+  {year:2013,teams:12,data:[
+    {o:'Yonni',rs:1,po:null,w:11,pts:1451.98},{o:'Joe',rs:2,po:null,w:8,pts:1195.15},
+    {o:'Cory',rs:3,po:null,w:8,pts:1311.83},{o:'Curtis',rs:4,po:4,w:8,pts:1209.33},
+    {o:'Perry',rs:5,po:null,w:8,pts:1182.16},{o:'Aaron',rs:6,po:2,w:7,pts:1260.39},
+    {o:'Budd',rs:7,po:3,w:6,pts:1258.56},{o:'Steve',rs:8,po:1,w:5,pts:1226.36},
+    {o:'Rob',rs:9,po:null,w:5,pts:1143.95},{o:'Bram',rs:10,po:null,w:5,pts:1189.58},
+    {o:'Ian',rs:11,po:null,w:4,pts:1150.48},{o:'Smitty',rs:12,po:null,w:3,pts:1199.07},
+  ]},
+  {year:2012,teams:12,data:[
+    {o:'Curtis',rs:1,po:4,w:10,pts:1297.4},{o:'Steve',rs:2,po:2,w:8,pts:1244.89},
+    {o:'Budd',rs:3,po:3,w:7,pts:1189.35},{o:'Andrew',rs:4,po:null,w:7,pts:1268.38},
+    {o:'Perry',rs:5,po:1,w:7,pts:1144.42},{o:'Smitty',rs:6,po:null,w:6,pts:1105.35},
+    {o:'Rob',rs:7,po:null,w:6,pts:1265.47},{o:'David',rs:8,po:null,w:6,pts:1186.48},
+    {o:'Ian',rs:9,po:null,w:6,pts:1125.08},{o:'Jim',rs:10,po:null,w:6,pts:1203.85},
+    {o:'Cory',rs:11,po:null,w:5,pts:1045.94},{o:'Aaron',rs:12,po:null,w:4,pts:1170.87},
+  ]},
+];
+
+const WEEKLY = [
+  {year:2025,hiWeek:12,hiTeam:'Yonni',hiPts:160.36,loWeek:9,loTeam:'Cory',loPts:34.5},
+  {year:2024,hiWeek:14,hiTeam:'Yonni',hiPts:164.78,loWeek:7,loTeam:'Leigh',loPts:36.31},
+  {year:2023,hiWeek:13,hiTeam:'Stan',hiPts:162.56,loWeek:1,loTeam:'Cory',loPts:47.24},
+  {year:2022,hiWeek:8,hiTeam:'Bram',hiPts:149.04,loWeek:12,loTeam:'Budd',loPts:51.64},
+  {year:2021,hiWeek:5,hiTeam:'Evan',hiPts:165.6,loWeek:14,loTeam:'James',loPts:39.28},
+  {year:2020,hiWeek:4,hiTeam:'Bram',hiPts:145.82,loWeek:11,loTeam:'James',loPts:44.88},
+  {year:2019,hiWeek:14,hiTeam:'Evan',hiPts:155.64,loWeek:12,loTeam:'Cory',loPts:36.78},
+  {year:2018,hiWeek:1,hiTeam:'Budd',hiPts:164.46,loWeek:13,loTeam:'Budd',loPts:51.63},
+  {year:2017,hiWeek:1,hiTeam:'Yonni',hiPts:138.12,loWeek:10,loTeam:'Curtis',loPts:31.44},
+  {year:2016,hiWeek:1,hiTeam:'Bram',hiPts:145.12,loWeek:1,loTeam:'Chow',loPts:53.14},
+  {year:2015,hiWeek:3,hiTeam:'Smitty',hiPts:169.77,loWeek:8,loTeam:'Aaron',loPts:47.34},
+  {year:2014,hiWeek:13,hiTeam:'Yonni',hiPts:168.62,loWeek:11,loTeam:'Joe',loPts:48.52},
+  {year:2013,hiWeek:1,hiTeam:'Joe',hiPts:158.08,loWeek:12,loTeam:'Perry',loPts:36.86},
+  {year:2012,hiWeek:14,hiTeam:'Curtis',hiPts:148.7,loWeek:5,loTeam:'Smitty',loPts:48.59},
+];
+
+// ── Compute all-time stats ────────────────────────────────────────────────
+const allManagers = new Set();
+SEASONS.forEach(s=>s.data.forEach(d=>allManagers.add(d.o)));
+
+const stats = {};
+allManagers.forEach(o=>{
+  stats[o]={seasons:0,wins:0,games:0,pts:0,playoffs:0,regChamps:0,top4:0,top2:0,champs:0,bestPtsSeason:0};
+});
+
+SEASONS.forEach(s=>{
+  const games = s.teams === 14 ? 14 : 13;
+  s.data.forEach(d=>{
+    const st = stats[d.o];
+    st.seasons++;
+    st.games += games;
+    st.wins += (d.w||0);
+    st.pts += (d.pts||0);
+    if(d.rs && d.rs <= Math.ceil(s.teams/2)) st.playoffs++;
+    if(d.rs===1) st.regChamps++;
+    if(d.po) st.top4++;
+    if(d.po && d.po<=2) st.top2++;
+    if(d.pts > st.bestPtsSeason) st.bestPtsSeason = d.pts;
+  });
+  // champion = playoff finish 1
+  const champ = s.data.find(d=>d.po===1);
+  if(champ) stats[champ.o].champs++;
+});
+
+// ── Championship Wall ─────────────────────────────────────────────────────
+let activeCard = null;
+
+function getChamp(season){
+  const entry = season.data.find(d=>d.po===1);
+  return entry ? entry.o : null;
+}
+
+const champGrid = document.getElementById('champ-grid');
+const detailContainer = document.getElementById('season-detail-container');
+
+[...SEASONS].sort((a,b)=>b.year-a.year).forEach(season=>{
+  const champ = getChamp(season);
+  const color = champ ? (TEAM_COLORS[champ]||'#94a3b8') : '#94a3b8';
+  const card = document.createElement('div');
+  card.className = 'champ-card';
+  card.dataset.year = season.year;
+  card.innerHTML = `
+    <div class="champ-year">${season.year}</div>
+    <div class="champ-trophy">🏆</div>
+    <div class="champ-name" style="color:${color}">${champ||'?'}</div>
+  `;
+  card.addEventListener('click', ()=>{
+    if(activeCard===season.year){
+      // close
+      activeCard=null;
+      detailContainer.innerHTML='';
+      card.classList.remove('active-card');
+      document.querySelectorAll('.champ-card').forEach(c=>c.classList.remove('active-card'));
+    } else {
+      activeCard=season.year;
+      document.querySelectorAll('.champ-card').forEach(c=>c.classList.remove('active-card'));
+      card.classList.add('active-card');
+      renderSeasonDetail(season);
+    }
+  });
+  champGrid.appendChild(card);
+});
+
+function renderSeasonDetail(season){
+  const champ = getChamp(season);
+  const champColor = champ ? (TEAM_COLORS[champ]||'#94a3b8') : '#94a3b8';
+  const sorted = [...season.data].sort((a,b)=>a.rs-b.rs);
+  const weekData = WEEKLY.find(w=>w.year===season.year);
+
+  const totalGames = season.year >= 2021 ? 14 : 13;
+
+  let rows = sorted.map(d=>{
+    const poClass = d.po===1 ? 'po-1' : 'po-2';
+    const poLabel = d.po===1?'🏆 Champion':d.po===2?'Runner-up':d.po===3?'3rd place':d.po===4?'4th place':'';
+    const color = TEAM_COLORS[d.o]||'#94a3b8';
+    const losses = d.w != null ? (totalGames - d.w) : '-';
+    const poBadge = d.po ? `<span class="po-badge ${poClass}">${poLabel}</span>` : '';
+    return `<tr>
+      <td><span class="pos-badge">${d.rs}</span></td>
+      <td style="color:${color};font-weight:700">${d.o}${poBadge}</td>
+      <td style="color:var(--text2);font-variant-numeric:tabular-nums">${d.w}</td>
+      <td style="color:var(--text2);font-variant-numeric:tabular-nums">${losses}</td>
+      <td style="color:var(--text2);font-variant-numeric:tabular-nums">${d.pts?d.pts.toFixed(2):'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const weekHtml = weekData ? `
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text3)">
+      <span>📈 High: <strong style="color:var(--teal)">${weekData.hiPts.toFixed(2)}</strong> ${weekData.hiTeam} (Wk${weekData.hiWeek})</span>
+      <span>📉 Low: <strong style="color:var(--teal)">${weekData.loPts.toFixed(2)}</strong> ${weekData.loTeam} (Wk${weekData.loWeek})</span>
+    </div>` : '';
+
+  detailContainer.innerHTML = `
+    <div class="season-detail">
+      <div class="season-detail-header">
+        <div class="season-detail-year">${season.year}</div>
+        <div class="season-detail-champ">
+          <span>🏆</span>
+          <span style="color:${champColor};font-weight:800">${champ}</span>
+          <span style="color:var(--text3);font-weight:400;font-size:11px;margin-left:4px">${season.teams}-team · ${totalGames} games</span>
+        </div>
+        <button class="season-close" onclick="document.getElementById('season-detail-container').innerHTML='';document.querySelectorAll('.champ-card').forEach(c=>c.classList.remove('active-card'));window.activeCard=null">✕ Close</button>
+      </div>
+      <table class="season-table">
+        <thead><tr>
+          <th>Pos</th><th>Manager</th><th>W</th><th>L</th><th>Pts For</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${weekHtml}
+    </div>
+  `;
+  detailContainer.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── Leaderboards ──────────────────────────────────────────────────────────
+const lbGrid = document.getElementById('lb-grid');
+
+function makeLeaderboard(title, entries, valFn, valClass='teal', minSeasons=1){
+  const ranked = [...allManagers]
+    .map(o=>({o, st:stats[o]}))
+    .filter(({st})=>st.seasons>=minSeasons)
+    .sort((a,b)=>valFn(b.st)-valFn(a.st))
+    .slice(0,10);
+
+  const card = document.createElement('div');
+  card.className = 'lb-card';
+  card.innerHTML = `<div class="lb-title">${title}</div>`;
+  ranked.forEach(({o,st},i)=>{
+    const active = ACTIVE.has(o);
+    const color = active ? (TEAM_COLORS[o]||'#94a3b8') : null;
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    row.innerHTML = `
+      <span class="lb-rank">${i+1}</span>
+      <span class="lb-name${active?'':' former'}" style="${color?`color:${color}`:''}">
+        ${o}${active?'':'<span style="font-size:9px;margin-left:4px;color:var(--text3)">✕</span>'}
+      </span>
+      <span class="lb-val ${valClass}">${valFn(st,true)}</span>
+    `;
+    card.appendChild(row);
+  });
+  lbGrid.appendChild(card);
+}
+
+// Championships
+makeLeaderboard('🏆 Championships',
+  null, (st,fmt)=>fmt?'🏆'.repeat(st.champs)||'-':st.champs, 'gold');
+
+// Win %
+makeLeaderboard('Win % (3+ seasons)',
+  null,
+  (st,fmt)=>{
+    const pct = st.wins/st.games;
+    return fmt ? (pct*100).toFixed(1)+'%' : pct;
+  }, 'teal', 3);
+
+// Points per season
+makeLeaderboard('Avg Pts/Season (3+ yrs)',
+  null,
+  (st,fmt)=>{
+    const ppy = st.pts/st.seasons;
+    return fmt ? Number(ppy.toFixed(0)).toLocaleString() : ppy;
+  }, 'teal', 3);
+
+// Most points in one season
+makeLeaderboard('Best Single Season',
+  null,
+  (st,fmt)=>fmt ? Math.round(st.bestPtsSeason).toLocaleString() : st.bestPtsSeason,
+  'teal');
+
+// Playoff appearances
+makeLeaderboard('Playoff Appearances',
+  null,
+  (st,fmt)=>{
+    if(!fmt) return st.playoffs;
+    return `${st.playoffs} <span style="color:var(--text3);font-weight:400">(${(st.playoffs/st.seasons*100).toFixed(0)}%)</span>`;
+  }, 'teal');
+
+// Regular season titles
+makeLeaderboard('Reg. Season Titles',
+  null,
+  (st,fmt)=>fmt?(st.regChamps||'-'):st.regChamps,
+  'teal');
+
+// Finals appearances
+makeLeaderboard('Finals Appearances (top 2)',
+  null,
+  (st,fmt)=>fmt?(st.top2||'-'):st.top2,
+  'teal');
+
+// Most seasons
+makeLeaderboard('Most Seasons',
+  null,
+  (st,fmt)=>fmt?st.seasons:st.seasons,
+  'teal');
+
+// ── Weekly Records ─────────────────────────────────────────────────────────
+const hiEl = document.getElementById('hi-scores');
+const loEl = document.getElementById('lo-scores');
+
+WEEKLY.forEach(w=>{
+  const hiRow = document.createElement('div');
+  hiRow.className = 'weekly-row';
+  hiRow.innerHTML = `
+    <span class="weekly-year">${w.year}</span>
+    <span class="weekly-wk">Wk${w.hiWeek}</span>
+    <span class="weekly-team" style="color:${TEAM_COLORS[w.hiTeam]||'#94a3b8'}">${w.hiTeam}</span>
+    <span class="weekly-pts hi">${w.hiPts.toFixed(2)}</span>
+  `;
+  hiEl.appendChild(hiRow);
+
+  const loRow = document.createElement('div');
+  loRow.className = 'weekly-row';
+  loRow.innerHTML = `
+    <span class="weekly-year">${w.year}</span>
+    <span class="weekly-wk">Wk${w.loWeek}</span>
+    <span class="weekly-team" style="color:${TEAM_COLORS[w.loTeam]||'#94a3b8'}">${w.loTeam}</span>
+    <span class="weekly-pts lo">${w.loPts.toFixed(2)}</span>
+  `;
+  loEl.appendChild(loRow);
+});
+</script>
+</body>
+</html>
