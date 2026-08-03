@@ -708,11 +708,9 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
   if(intervening.length===0)return out;
 
   const nPicks=intervening.length;
-  // σ: calibrated power law × linear variability scaling
   const sigma=1.23*Math.pow(nPicks,0.334)*Math.max(0.05,variability);
   const cutoff=nPicks+1;
 
-  // Standard normal CDF (Abramowitz & Stegun 26.2.17, max error 7.5e-8)
   function normalCDF(x){
     if(x>6)return 1;if(x<-6)return 0;
     const t=1/(1+0.2316419*Math.abs(x));
@@ -721,17 +719,47 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
     return x>=0?base:1-base;
   }
 
-  // Sort pool by effective score = rank × tendency[pos], with round decay applied.
-  // Use the average round of intervening picks as the decay reference point.
+  // Build initial roster state for each team from already-made picks
+  const numTeams=teams?teams.length:14;
+  const simRosters={};
+  for(let t=0;t<numTeams;t++)simRosters[t]=[];
+  order.forEach(pick=>{
+    if(picks[pick.overall]&&pick.teamIdx!==myIdx){
+      simRosters[pick.teamIdx]=simRosters[pick.teamIdx]||[];
+      simRosters[pick.teamIdx].push(picks[pick.overall]);
+    }
+  });
+
+  // Score each available player for each intervening pick,
+  // accounting for that team's current roster via needPenalty
+  // Run Monte Carlo simulation: for each player, estimate how likely
+  // they survive all nPicks by computing their effective rank in the pool
+  // after applying per-team needPenalty and tendency with round decay
+
+  // Build a single effective rank for each player that accounts for
+  // the average needPenalty across all intervening teams/rounds
   const avgRound=intervening.reduce((s,p)=>s+(p.round||1),0)/intervening.length;
   const decay=Math.exp(-0.3*(avgRound-1));
-  const sorted=[...availPlayers].sort((a,b)=>{
-    const tv_a=tendencies[a.pos]??1;
-    const tv_b=tendencies[b.pos]??1;
-    const ea=a.rank*(1+(tv_a-1)*decay);
-    const eb=b.rank*(1+(tv_b-1)*decay);
-    return ea-eb;
+
+  // For each player, compute average effective score across intervening picks
+  // to get a roster-aware rank ordering
+  const playerScores={};
+  availPlayers.forEach(p=>{
+    const tv=tendencies[p.pos]??1;
+    const tendEffect=1+(tv-1)*decay;
+    // Average needPenalty across teams that will be picking
+    let totalPenalty=0;
+    let count=0;
+    intervening.forEach(pick=>{
+      const roster=simRosters[pick.teamIdx]||[];
+      totalPenalty+=needPenalty(p.pos,roster,pick.round,numRounds,rosterSlots);
+      count++;
+    });
+    const avgPenalty=count>0?totalPenalty/count:1;
+    playerScores[p.name]=(p.rank+0.001)*tendEffect*avgPenalty;
   });
+
+  const sorted=[...availPlayers].sort((a,b)=>playerScores[a.name]-playerScores[b.name]);
 
   sorted.forEach((p,i)=>{
     const rankInPool=i+1;
