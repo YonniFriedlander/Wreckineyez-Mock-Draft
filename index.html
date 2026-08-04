@@ -497,6 +497,59 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 
 /* canvas for image export (hidden) */
 #roster-canvas{display:none}
+
+/* ── History screen ── */
+.hist-page{max-width:1000px;margin:0 auto;padding:16px 16px 80px}
+.hist-section-label{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:900;
+  text-transform:uppercase;letter-spacing:0.06em;color:var(--text);margin:40px 0 4px;}
+.hist-section-sub{font-size:11px;color:var(--text3);margin-bottom:18px;}
+.hist-champ-wall{background:linear-gradient(135deg,var(--s1) 0%,rgba(245,158,11,0.06) 100%);
+  border:1px solid rgba(245,158,11,0.2);border-radius:var(--rl);padding:22px;margin-top:20px;}
+.hist-champ-wall-title{font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--gold);margin-bottom:14px;}
+.hist-champ-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.hist-champ-card{display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);
+  border-radius:var(--r);padding:9px 13px;min-width:68px;
+  cursor:pointer;transition:all 0.15s;}
+.hist-champ-card:hover{background:rgba(245,158,11,0.2);border-color:rgba(245,158,11,0.4);transform:translateY(-1px);}
+.hist-champ-card.active{background:rgba(245,158,11,0.25);border-color:rgba(245,158,11,0.6);
+  box-shadow:0 0 0 2px rgba(245,158,11,0.3);}
+.hist-season-detail{background:var(--s1);border:1px solid var(--border2);border-radius:var(--rl);
+  padding:20px;margin-top:12px;animation:hdFadeIn 0.18s ease;}
+@keyframes hdFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.hist-pos-badge{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:800;
+  background:var(--s3);color:var(--text3);}
+.hist-po-badge{font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;margin-left:4px;}
+.hist-po-1{background:rgba(245,158,11,0.15);color:var(--gold);}
+.hist-po-other{background:rgba(100,116,139,0.12);color:var(--text3);}
+.hist-season-table{width:100%;border-collapse:collapse;font-size:12px;}
+.hist-season-table th{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;
+  color:var(--text3);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border2);}
+.hist-season-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+.hist-season-table tr:last-child td{border-bottom:none;}
+.hist-season-table tr:hover td{background:var(--s2);}
+.hist-lb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.hist-lb-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:16px;}
+.hist-lb-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text3);margin-bottom:10px;}
+.hist-lb-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid var(--border);font-size:12px;}
+.hist-lb-row:last-child{border-bottom:none;}
+.hist-weekly-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.hist-weekly-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:16px;}
+.hist-weekly-title{font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:0.08em;color:var(--teal);margin-bottom:10px;}
+.hist-weekly-row{display:flex;align-items:center;gap:6px;padding:4px 0;
+  border-bottom:1px solid var(--border);font-size:12px;}
+.hist-weekly-row:last-child{border-bottom:none;}
+@media(max-width:768px){
+  .hist-weekly-grid{grid-template-columns:1fr;}
+  .hist-lb-grid{grid-template-columns:1fr 1fr;}
+  .hist-section-label{font-size:22px;}
+  .hist-champ-card{min-width:60px;padding:7px 10px;}
+}
 </style>
 </head>
 <body>
@@ -1045,6 +1098,350 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
 }
 
 /* ── App ── */
+// ── History data ─────────────────────────────────────────────────────────
+const HIST_COLORS={
+  Yonni:'#e8366e',Aaron:'#2dd4bf',Chow:'#f59e0b',Evan:'#a78bfa',
+  Rob:'#60a5fa',Budd:'#34d399',Bram:'#fb923c',James:'#f472b6',
+  Pat:'#818cf8',Cory:'#4ade80',Leigh:'#e879f9',Liam:'#38bdf8',
+  Stan:'#fbbf24',Bruce:'#94a3b8',
+  Smitty:'#84cc16',Perry:'#e2e8f0',Curtis:'#67e8f9',Steve:'#fda4af',
+  Joe:'#c4b5fd',Ian:'#86efac',Andrew:'#fcd34d',David:'#f9a8d4',Jim:'#a5f3fc',
+};
+const HIST_ACTIVE=new Set(['Yonni','Aaron','Chow','Evan','Rob','Budd','Bram','James','Pat','Cory','Leigh','Liam','Stan','Bruce']);
+const HIST_SEASONS=[
+  {year:2025,teams:14,data:[
+    {o:'Aaron',rs:1,po:4,w:12,pts:1517.93},{o:'Yonni',rs:2,po:3,w:10,pts:1507.92},
+    {o:'Evan',rs:3,po:2,w:9,pts:1325.36},{o:'Chow',rs:4,po:1,w:9,pts:1303.95},
+    {o:'Budd',rs:5,po:null,w:8.5,pts:1242.48},{o:'Pat',rs:6,po:null,w:7.5,pts:1285.58},
+    {o:'James',rs:7,po:null,w:7.5,pts:1228.19},{o:'Liam',rs:8,po:null,w:7,pts:1223.92},
+    {o:'Bram',rs:9,po:null,w:6,pts:1222.83},{o:'Rob',rs:10,po:null,w:5,pts:1059.33},
+    {o:'Leigh',rs:11,po:null,w:4.5,pts:1191.02},{o:'Stan',rs:12,po:null,w:4.5,pts:1129.14},
+    {o:'Cory',rs:13,po:null,w:4.5,pts:1042.33},{o:'Bruce',rs:14,po:null,w:3,pts:1131.76},
+  ]},
+  {year:2024,teams:12,data:[
+    {o:'Stan',rs:1,po:2,w:11,pts:1370.45},{o:'Leigh',rs:2,po:null,w:9,pts:1204.72},
+    {o:'Rob',rs:3,po:null,w:8,pts:1451.43},{o:'James',rs:4,po:4,w:8,pts:1304.12},
+    {o:'Yonni',rs:5,po:null,w:7,pts:1395.85},{o:'Cory',rs:6,po:1,w:7,pts:1312.6},
+    {o:'Bram',rs:7,po:3,w:7,pts:1305.69},{o:'Pat',rs:8,po:null,w:6,pts:1349.71},
+    {o:'Chow',rs:9,po:null,w:6,pts:1131.5},{o:'Aaron',rs:10,po:null,w:5,pts:1351.46},
+    {o:'Evan',rs:11,po:null,w:5,pts:1295.17},{o:'Budd',rs:12,po:null,w:5,pts:1267.57},
+  ]},
+  {year:2023,teams:12,data:[
+    {o:'Evan',rs:1,po:4,w:11,pts:1374.75},{o:'Yonni',rs:2,po:null,w:10,pts:1475.06},
+    {o:'Chow',rs:3,po:3,w:9,pts:1322.16},{o:'Stan',rs:4,po:1,w:8,pts:1311.38},
+    {o:'Bram',rs:5,po:null,w:8,pts:1270.15},{o:'James',rs:6,po:null,w:7,pts:1272.4},
+    {o:'Leigh',rs:7,po:2,w:7,pts:1186.73},{o:'Budd',rs:8,po:null,w:6,pts:1322.85},
+    {o:'Rob',rs:9,po:null,w:5,pts:1285.3},{o:'Pat',rs:10,po:null,w:5,pts:1274.83},
+    {o:'Aaron',rs:11,po:null,w:4,pts:1280.68},{o:'Cory',rs:12,po:null,w:4,pts:1089.15},
+  ]},
+  {year:2022,teams:12,data:[
+    {o:'Rob',rs:1,po:4,w:12,pts:1522.17},{o:'Cory',rs:2,po:3,w:10,pts:1315.74},
+    {o:'Yonni',rs:3,po:1,w:9,pts:1421.53},{o:'Evan',rs:4,po:2,w:8,pts:1388.36},
+    {o:'Stan',rs:5,po:null,w:8,pts:1126.7},{o:'Aaron',rs:6,po:null,w:7,pts:1338.41},
+    {o:'Pat',rs:7,po:null,w:7,pts:1255.5},{o:'Leigh',rs:8,po:null,w:7,pts:1167.96},
+    {o:'Chow',rs:9,po:null,w:6,pts:1351.1},{o:'Bram',rs:10,po:null,w:4,pts:1335.31},
+    {o:'James',rs:11,po:null,w:3,pts:1267.96},{o:'Budd',rs:12,po:null,w:3,pts:1029.5},
+  ]},
+  {year:2021,teams:12,data:[
+    {o:'Chow',rs:1,po:1,w:10,pts:1533.66},{o:'Leigh',rs:2,po:null,w:9,pts:1416.24},
+    {o:'James',rs:3,po:4,w:9,pts:1372.4},{o:'Pat',rs:4,po:3,w:9,pts:1335.53},
+    {o:'Cory',rs:5,po:null,w:8,pts:1378.17},{o:'Aaron',rs:6,po:null,w:8,pts:1344.42},
+    {o:'Budd',rs:7,po:2,w:7,pts:1374.94},{o:'Yonni',rs:8,po:null,w:7,pts:1288.38},
+    {o:'Evan',rs:9,po:null,w:5,pts:1305.11},{o:'Rob',rs:10,po:null,w:5,pts:1276.1},
+    {o:'Bram',rs:11,po:null,w:4,pts:1221.02},{o:'Stan',rs:12,po:null,w:3,pts:1178.75},
+  ]},
+  {year:2020,teams:12,data:[
+    {o:'Rob',rs:1,po:null,w:11,pts:1345.74},{o:'Yonni',rs:2,po:1,w:9,pts:1361.38},
+    {o:'Evan',rs:3,po:null,w:9,pts:1273.47},{o:'Budd',rs:4,po:2,w:8,pts:1391.48},
+    {o:'Bram',rs:5,po:null,w:8,pts:1334.02},{o:'Chow',rs:6,po:3,w:8,pts:1292.7},
+    {o:'Leigh',rs:7,po:null,w:5,pts:1194.07},{o:'Stan',rs:8,po:4,w:5,pts:1118.12},
+    {o:'Aaron',rs:9,po:null,w:4,pts:1324.81},{o:'Pat',rs:10,po:null,w:4,pts:1160.86},
+    {o:'Cory',rs:11,po:null,w:4,pts:1103.78},{o:'James',rs:12,po:null,w:3,pts:1102.22},
+  ]},
+  {year:2019,teams:12,data:[
+    {o:'Aaron',rs:1,po:1,w:11,pts:1405.68},{o:'Yonni',rs:2,po:3,w:10,pts:1280.96},
+    {o:'Bram',rs:3,po:null,w:10,pts:1275.64},{o:'Chow',rs:4,po:null,w:9,pts:1364.26},
+    {o:'Evan',rs:5,po:4,w:7,pts:1351.28},{o:'Pat',rs:6,po:2,w:6,pts:1120.65},
+    {o:'Perry',rs:7,po:null,w:5,pts:1323.34},{o:'Cory',rs:8,po:null,w:5,pts:1148.33},
+    {o:'Budd',rs:9,po:null,w:4,pts:1205.64},{o:'Curtis',rs:10,po:null,w:4,pts:1130.0},
+    {o:'Smitty',rs:11,po:null,w:4,pts:1129.27},{o:'Rob',rs:12,po:null,w:3,pts:1082.26},
+  ]},
+  {year:2018,teams:12,data:[
+    {o:'Aaron',rs:1,po:null,w:11,pts:1536.22},{o:'Budd',rs:2,po:4,w:9,pts:1524.9},
+    {o:'Yonni',rs:3,po:null,w:9,pts:1290.6},{o:'Smitty',rs:4,po:null,w:8,pts:1284.26},
+    {o:'Chow',rs:5,po:3,w:7,pts:1360.4},{o:'Cory',rs:6,po:2,w:7,pts:1290.79},
+    {o:'Rob',rs:7,po:null,w:6,pts:1302.68},{o:'Pat',rs:8,po:1,w:5,pts:1295.46},
+    {o:'Curtis',rs:9,po:null,w:5,pts:1102.37},{o:'Perry',rs:10,po:null,w:4,pts:1186.86},
+    {o:'Evan',rs:11,po:null,w:4,pts:1109.87},{o:'Bram',rs:12,po:null,w:3,pts:1114.36},
+  ]},
+  {year:2017,teams:12,data:[
+    {o:'Chow',rs:1,po:1,w:10,pts:1301.18},{o:'Smitty',rs:2,po:2,w:10,pts:1204.12},
+    {o:'Yonni',rs:3,po:3,w:9,pts:1278.96},{o:'Evan',rs:4,po:null,w:9,pts:1151.29},
+    {o:'Cory',rs:5,po:4,w:8,pts:1121.32},{o:'Budd',rs:6,po:null,w:7,pts:1133.57},
+    {o:'Aaron',rs:7,po:null,w:6,pts:1138.12},{o:'Bram',rs:8,po:null,w:5,pts:1194.01},
+    {o:'Rob',rs:9,po:null,w:5,pts:1162.18},{o:'Pat',rs:10,po:null,w:4,pts:1085.0},
+    {o:'Curtis',rs:11,po:null,w:3,pts:1005.22},{o:'Perry',rs:12,po:null,w:2,pts:1053.71},
+  ]},
+  {year:2016,teams:12,data:[
+    {o:'Bram',rs:1,po:2,w:10,pts:1364.07},{o:'Smitty',rs:2,po:1,w:9,pts:1253.16},
+    {o:'Aaron',rs:3,po:null,w:8,pts:1375.84},{o:'Chow',rs:4,po:null,w:8,pts:1278.68},
+    {o:'Perry',rs:5,po:4,w:7,pts:1162.16},{o:'Curtis',rs:6,po:3,w:7,pts:1242.59},
+    {o:'Rob',rs:7,po:null,w:6,pts:1181.0},{o:'Yonni',rs:8,po:null,w:5,pts:1235.0},
+    {o:'Budd',rs:9,po:null,w:5,pts:1143.07},{o:'Cory',rs:10,po:null,w:5,pts:1141.6},
+    {o:'Pat',rs:11,po:null,w:4,pts:1038.04},{o:'Joe',rs:12,po:null,w:4,pts:1160.34},
+  ]},
+  {year:2015,teams:12,data:[
+    {o:'Smitty',rs:1,po:null,w:9,pts:1295.34},{o:'Bram',rs:2,po:null,w:8,pts:1254.09},
+    {o:'Pat',rs:3,po:null,w:8,pts:1088.67},{o:'Budd',rs:4,po:null,w:7,pts:1258.24},
+    {o:'Rob',rs:5,po:1,w:7,pts:1214.17},{o:'Cory',rs:6,po:4,w:6,pts:1225.34},
+    {o:'Perry',rs:7,po:2,w:6,pts:1280.89},{o:'Joe',rs:8,po:3,w:6,pts:1118.06},
+    {o:'Aaron',rs:9,po:null,w:6,pts:1153.08},{o:'Yonni',rs:10,po:null,w:6,pts:1302.38},
+    {o:'Curtis',rs:11,po:null,w:5,pts:1156.03},{o:'Steve',rs:12,po:null,w:4,pts:1196.34},
+  ]},
+  {year:2014,teams:12,data:[
+    {o:'Aaron',rs:1,po:4,w:10,pts:1477.2},{o:'Rob',rs:2,po:3,w:8,pts:1363.49},
+    {o:'Yonni',rs:3,po:null,w:8,pts:1275.46},{o:'Perry',rs:4,po:2,w:8,pts:1227.07},
+    {o:'Steve',rs:5,po:null,w:8,pts:1116.95},{o:'Budd',rs:6,po:1,w:7,pts:1290.21},
+    {o:'Curtis',rs:7,po:null,w:6,pts:1232.01},{o:'Cory',rs:8,po:null,w:6,pts:1098.24},
+    {o:'Bram',rs:9,po:null,w:5,pts:1246.52},{o:'Pat',rs:10,po:null,w:4,pts:1101.41},
+    {o:'Smitty',rs:11,po:null,w:4,pts:1042.58},{o:'Joe',rs:12,po:null,w:4,pts:1170.07},
+  ]},
+  {year:2013,teams:12,data:[
+    {o:'Yonni',rs:1,po:null,w:11,pts:1451.98},{o:'Joe',rs:2,po:null,w:8,pts:1195.15},
+    {o:'Cory',rs:3,po:null,w:8,pts:1311.83},{o:'Curtis',rs:4,po:4,w:8,pts:1209.33},
+    {o:'Perry',rs:5,po:null,w:8,pts:1182.16},{o:'Aaron',rs:6,po:2,w:7,pts:1260.39},
+    {o:'Budd',rs:7,po:3,w:6,pts:1258.56},{o:'Steve',rs:8,po:1,w:5,pts:1226.36},
+    {o:'Rob',rs:9,po:null,w:5,pts:1143.95},{o:'Bram',rs:10,po:null,w:5,pts:1189.58},
+    {o:'Ian',rs:11,po:null,w:4,pts:1150.48},{o:'Smitty',rs:12,po:null,w:3,pts:1199.07},
+  ]},
+  {year:2012,teams:12,data:[
+    {o:'Curtis',rs:1,po:4,w:10,pts:1297.4},{o:'Steve',rs:2,po:2,w:8,pts:1244.89},
+    {o:'Budd',rs:3,po:3,w:7,pts:1189.35},{o:'Andrew',rs:4,po:null,w:7,pts:1268.38},
+    {o:'Perry',rs:5,po:1,w:7,pts:1144.42},{o:'Smitty',rs:6,po:null,w:6,pts:1105.35},
+    {o:'Rob',rs:7,po:null,w:6,pts:1265.47},{o:'David',rs:8,po:null,w:6,pts:1186.48},
+    {o:'Ian',rs:9,po:null,w:6,pts:1125.08},{o:'Jim',rs:10,po:null,w:6,pts:1203.85},
+    {o:'Cory',rs:11,po:null,w:5,pts:1045.94},{o:'Aaron',rs:12,po:null,w:4,pts:1170.87},
+  ]},
+];
+const HIST_WEEKLY=[
+  {year:2025,hiWeek:12,hiTeam:'Yonni',hiPts:160.36,loWeek:9,loTeam:'Cory',loPts:34.5},
+  {year:2024,hiWeek:14,hiTeam:'Yonni',hiPts:164.78,loWeek:7,loTeam:'Leigh',loPts:36.31},
+  {year:2023,hiWeek:13,hiTeam:'Stan',hiPts:162.56,loWeek:1,loTeam:'Cory',loPts:47.24},
+  {year:2022,hiWeek:8,hiTeam:'Bram',hiPts:149.04,loWeek:12,loTeam:'Budd',loPts:51.64},
+  {year:2021,hiWeek:5,hiTeam:'Evan',hiPts:165.6,loWeek:14,loTeam:'James',loPts:39.28},
+  {year:2020,hiWeek:4,hiTeam:'Bram',hiPts:145.82,loWeek:11,loTeam:'James',loPts:44.88},
+  {year:2019,hiWeek:14,hiTeam:'Evan',hiPts:155.64,loWeek:12,loTeam:'Cory',loPts:36.78},
+  {year:2018,hiWeek:1,hiTeam:'Budd',hiPts:164.46,loWeek:13,loTeam:'Budd',loPts:51.63},
+  {year:2017,hiWeek:1,hiTeam:'Yonni',hiPts:138.12,loWeek:10,loTeam:'Curtis',loPts:31.44},
+  {year:2016,hiWeek:1,hiTeam:'Bram',hiPts:145.12,loWeek:1,loTeam:'Chow',loPts:53.14},
+  {year:2015,hiWeek:3,hiTeam:'Smitty',hiPts:169.77,loWeek:8,loTeam:'Aaron',loPts:47.34},
+  {year:2014,hiWeek:13,hiTeam:'Yonni',hiPts:168.62,loWeek:11,loTeam:'Joe',loPts:48.52},
+  {year:2013,hiWeek:1,hiTeam:'Joe',hiPts:158.08,loWeek:12,loTeam:'Perry',loPts:36.86},
+  {year:2012,hiWeek:14,hiTeam:'Curtis',hiPts:148.7,loWeek:5,loTeam:'Smitty',loPts:48.59},
+];
+
+function HistoryScreen(){
+  const[activeSeason,setActiveSeason]=React.useState(null);
+
+  // Compute all-time stats
+  const allManagers=React.useMemo(()=>{
+    const s=new Set();
+    HIST_SEASONS.forEach(season=>season.data.forEach(d=>s.add(d.o)));
+    return s;
+  },[]);
+
+  const stats=React.useMemo(()=>{
+    const st={};
+    allManagers.forEach(o=>{st[o]={seasons:0,wins:0,games:0,pts:0,playoffs:0,regChamps:0,top4:0,top2:0,champs:0,best:0};});
+    HIST_SEASONS.forEach(s=>{
+      const games=s.teams===14?14:13;
+      s.data.forEach(d=>{
+        const a=st[d.o];
+        a.seasons++;a.games+=games;a.wins+=(d.w||0);a.pts+=(d.pts||0);
+        if(d.rs<=Math.ceil(s.teams/2))a.playoffs++;
+        if(d.rs===1)a.regChamps++;
+        if(d.po)a.top4++;
+        if(d.po&&d.po<=2)a.top2++;
+        if(d.pts>a.best)a.best=d.pts;
+      });
+      const champ=s.data.find(d=>d.po===1);
+      if(champ)st[champ.o].champs++;
+    });
+    return st;
+  },[]);
+
+  function getChamp(season){return season.data.find(d=>d.po===1)?.o||null;}
+
+  function SeasonDetail({season}){
+    const champ=getChamp(season);
+    const champColor=HIST_COLORS[champ]||'#94a3b8';
+    const games=season.year>=2021?14:13;
+    const sorted=[...season.data].sort((a,b)=>a.rs-b.rs);
+    const weekly=HIST_WEEKLY.find(w=>w.year===season.year);
+    return(
+      <div className="hist-season-detail">
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16,paddingBottom:12,borderBottom:'1px solid var(--border)'}}>
+          <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:32,fontWeight:900,color:'var(--gold)'}}>{season.year}</span>
+          <div style={{fontSize:13,fontWeight:700}}>
+            <span style={{fontSize:18,marginRight:4}}>🏆</span>
+            <span style={{color:champColor,fontWeight:800}}>{champ}</span>
+            <span style={{color:'var(--text3)',fontWeight:400,fontSize:11,marginLeft:6}}>{season.teams}-team · {games} games</span>
+          </div>
+          <button onClick={()=>setActiveSeason(null)}
+            style={{marginLeft:'auto',background:'none',border:'1px solid var(--border2)',
+              borderRadius:'var(--r)',color:'var(--text3)',padding:'4px 10px',cursor:'pointer',fontSize:12}}>
+            ✕ Close
+          </button>
+        </div>
+        <table className="hist-season-table">
+          <thead><tr><th>Pos</th><th>Manager</th><th>W</th><th>L</th><th>Pts For</th></tr></thead>
+          <tbody>
+            {sorted.map(d=>{
+              const poLabel=d.po===1?'🏆 Champion':d.po===2?'Runner-up':d.po===3?'3rd place':d.po===4?'4th place':'';
+              return(
+                <tr key={d.o}>
+                  <td><span className="hist-pos-badge">{d.rs}</span></td>
+                  <td style={{color:HIST_COLORS[d.o]||'#94a3b8',fontWeight:700}}>
+                    {d.o}
+                    {d.po&&<span className={`hist-po-badge ${d.po===1?'hist-po-1':'hist-po-other'}`}>{poLabel}</span>}
+                  </td>
+                  <td style={{color:'var(--text2)',fontVariantNumeric:'tabular-nums'}}>{d.w}</td>
+                  <td style={{color:'var(--text2)',fontVariantNumeric:'tabular-nums'}}>{d.w!=null?games-d.w:'-'}</td>
+                  <td style={{color:'var(--text2)',fontVariantNumeric:'tabular-nums'}}>{d.pts?d.pts.toFixed(2):'-'}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {weekly&&(
+          <div style={{display:'flex',gap:16,marginTop:12,fontSize:11,color:'var(--text3)',flexWrap:'wrap'}}>
+            <span>📈 High: <strong style={{color:'var(--teal)'}}>{weekly.hiPts.toFixed(2)}</strong> {weekly.hiTeam} (Wk{weekly.hiWeek})</span>
+            <span>📉 Low: <strong style={{color:'var(--teal)'}}>{weekly.loPts.toFixed(2)}</strong> {weekly.loTeam} (Wk{weekly.loWeek})</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function Leaderboard({title,sortFn,fmtFn,valClass,minSeasons=1}){
+    const rows=[...allManagers]
+      .map(o=>({o,st:stats[o]}))
+      .filter(({st})=>st.seasons>=minSeasons&&sortFn(st)>0)
+      .sort((a,b)=>sortFn(b.st)-sortFn(a.st))
+      .slice(0,10);
+    return(
+      <div className="hist-lb-card">
+        <div className="hist-lb-title">{title}</div>
+        {rows.map(({o,st},i)=>{
+          const active=HIST_ACTIVE.has(o);
+          return(
+            <div key={o} className="hist-lb-row">
+              <span style={{fontSize:10,color:'var(--text3)',width:16,flexShrink:0,textAlign:'right'}}>{i+1}</span>
+              <span style={{flex:1,fontWeight:600,color:active?(HIST_COLORS[o]||'#94a3b8'):'var(--text3)'}}>
+                {o}{!active&&<span style={{fontSize:9,marginLeft:4,color:'var(--text3)'}}>✕</span>}
+              </span>
+              <span style={{fontWeight:700,fontVariantNumeric:'tabular-nums',whiteSpace:'nowrap',
+                color:valClass==='gold'?'var(--gold)':'var(--teal)'}}>
+                {fmtFn(st)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return(
+    <div className="hist-page">
+
+      {/* Championship Wall */}
+      <div className="hist-section-label" style={{marginTop:8}}>🏆 Champions</div>
+      <div className="hist-section-sub">Click any year to see that season's standings</div>
+      <div className="hist-champ-wall">
+        <div className="hist-champ-wall-title">14 seasons · 11 different champions</div>
+        <div className="hist-champ-grid">
+          {[...HIST_SEASONS].sort((a,b)=>b.year-a.year).map(season=>{
+            const champ=getChamp(season);
+            const color=HIST_COLORS[champ]||'#94a3b8';
+            const isActive=activeSeason===season.year;
+            return(
+              <div key={season.year}
+                className={`hist-champ-card${isActive?' active':''}`}
+                onClick={()=>setActiveSeason(isActive?null:season.year)}>
+                <span style={{fontSize:10,fontWeight:700,color:'var(--text3)'}}>{season.year}</span>
+                <span style={{fontSize:18}}>🏆</span>
+                <span style={{fontSize:11,fontWeight:800,color,textAlign:'center'}}>{champ}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {activeSeason&&(()=>{
+        const s=HIST_SEASONS.find(s=>s.year===activeSeason);
+        return s?<SeasonDetail season={s}/>:null;
+      })()}
+
+      {/* Leaderboards */}
+      <div className="hist-section-label">Leaderboards</div>
+      <div className="hist-section-sub">All-time stats across all managers</div>
+      <div className="hist-lb-grid">
+        <Leaderboard title="🏆 Championships" sortFn={st=>st.champs}
+          fmtFn={st=>'🏆'.repeat(st.champs)} valClass="gold"/>
+        <Leaderboard title="Win % (3+ seasons)" minSeasons={3}
+          sortFn={st=>st.wins/st.games}
+          fmtFn={st=>(st.wins/st.games*100).toFixed(1)+'%'}/>
+        <Leaderboard title="Avg Pts/Season (3+ yrs)" minSeasons={3}
+          sortFn={st=>st.pts/st.seasons}
+          fmtFn={st=>Math.round(st.pts/st.seasons).toLocaleString()}/>
+        <Leaderboard title="Best Single Season"
+          sortFn={st=>st.best}
+          fmtFn={st=>Math.round(st.best).toLocaleString()}/>
+        <Leaderboard title="Playoff Appearances"
+          sortFn={st=>st.playoffs}
+          fmtFn={st=>`${st.playoffs} (${(st.playoffs/st.seasons*100).toFixed(0)}%)`}/>
+        <Leaderboard title="Reg. Season Titles"
+          sortFn={st=>st.regChamps}
+          fmtFn={st=>st.regChamps}/>
+        <Leaderboard title="Finals Appearances (top 2)"
+          sortFn={st=>st.top2}
+          fmtFn={st=>st.top2}/>
+        <Leaderboard title="Most Seasons"
+          sortFn={st=>st.seasons}
+          fmtFn={st=>st.seasons}/>
+      </div>
+
+      {/* Weekly Records */}
+      <div className="hist-section-label">Weekly Records</div>
+      <div className="hist-section-sub">Highest and lowest single-week scores by season</div>
+      <div className="hist-weekly-grid">
+        <div className="hist-weekly-card">
+          <div className="hist-weekly-title">📈 Season High Score</div>
+          {HIST_WEEKLY.map(w=>(
+            <div key={w.year} className="hist-weekly-row">
+              <span style={{fontSize:10,color:'var(--text3)',width:34,flexShrink:0}}>{w.year}</span>
+              <span style={{fontSize:10,color:'var(--text3)',width:26,flexShrink:0}}>Wk{w.hiWeek}</span>
+              <span style={{flex:1,fontWeight:600,color:HIST_COLORS[w.hiTeam]||'#94a3b8'}}>{w.hiTeam}</span>
+              <span style={{fontWeight:700,fontVariantNumeric:'tabular-nums',color:'var(--teal)'}}>{w.hiPts.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="hist-weekly-card">
+          <div className="hist-weekly-title">📉 Season Low Score</div>
+          {HIST_WEEKLY.map(w=>(
+            <div key={w.year} className="hist-weekly-row">
+              <span style={{fontSize:10,color:'var(--text3)',width:34,flexShrink:0}}>{w.year}</span>
+              <span style={{fontSize:10,color:'var(--text3)',width:26,flexShrink:0}}>Wk{w.loWeek}</span>
+              <span style={{flex:1,fontWeight:600,color:HIST_COLORS[w.loTeam]||'#94a3b8'}}>{w.loTeam}</span>
+              <span style={{fontWeight:700,fontVariantNumeric:'tabular-nums',color:'var(--teal)'}}>{w.loPts.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
 function App(){
   const saved=useMemo(load,[]);
   const[screen,setScreen]=useState("setup");
@@ -1373,7 +1770,7 @@ function App(){
           <div className="logo-mark"><FootballMark/></div>
           <div>
             <div className="logo-text">Wreckineyez</div>
-            <div className="logo-sub">Mock Draft</div>
+            <div className="logo-sub">{screen==="history"?"History":"Mock Draft"}</div>
           </div>
         </div>
         {screen==="setup"&&(
@@ -1396,12 +1793,17 @@ function App(){
             color:"var(--text2)",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,lineHeight:1}}>
           ?
         </button>
-        <a href="history.html"
-          style={{background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",
-            borderRadius:20,padding:"5px 13px",fontSize:12,fontWeight:700,
-            color:"var(--text2)",textDecoration:"none",flexShrink:0,whiteSpace:"nowrap"}}>
-          History
-        </a>
+        {/* History tab — only show on setup screen to avoid crowding */}
+        {(screen==="setup"||screen==="history")&&(
+          <button
+            onClick={()=>setScreen(screen==="history"?"setup":"history")}
+            style={{background:screen==="history"?"var(--teal)":"rgba(255,255,255,0.07)",
+              border:"1px solid",borderColor:screen==="history"?"var(--teal)":"rgba(255,255,255,0.15)",
+              borderRadius:20,padding:"5px 13px",fontSize:12,fontWeight:700,
+              color:screen==="history"?"#0B0B14":"var(--text2)",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+            {screen==="history"?"← Draft":"History"}
+          </button>
+        )}
         {screen==="setup"&&canStart&&(
           <button className="hot" onClick={startDraft}
             data-wt="start-draft"
@@ -2040,6 +2442,8 @@ function App(){
           onExportCSV={exportCSV}
         />
       )}
+
+      {screen==="history"&&<HistoryScreen/>}
 
       {/* ── Walkthrough ── */}
       {!walkthroughDone&&<Walkthrough
