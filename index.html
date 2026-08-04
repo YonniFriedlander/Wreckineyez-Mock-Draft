@@ -459,9 +459,25 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 @media (max-width:768px){
   body{overflow-x:hidden}
   .page,.draft-page,.results-page{padding:12px 10px 90px;max-width:100%;width:100%;box-sizing:border-box}
-  .site-header{padding:0 10px}
-  .header-steps{gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0}
-  .tutorial-btn{display:none!important}
+  .site-header{
+    padding:0 10px;
+    height:auto;
+    flex-wrap:wrap;
+    gap:0;
+    row-gap:0;
+  }
+  .site-header .logo{flex:1;min-width:0;padding:10px 0 8px}
+  .site-header .tutorial-btn{display:none!important}
+  /* Start Draft and other right-side header buttons stay on row 1 */
+  .site-header .hot,.site-header .header-back{padding:6px 14px;font-size:12px}
+  /* Tabs row — full width second line */
+  .header-steps{
+    width:100%;order:99;
+    gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    padding:0 0 8px;margin-left:0;
+    border-top:1px solid var(--border);
+    padding-top:6px;
+  }
   .hstep{font-size:11px;padding:6px 9px;white-space:nowrap}
   .draft-layout{flex-direction:column;gap:14px}
   .draft-sidebar{
