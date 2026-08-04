@@ -459,8 +459,9 @@ button:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none}
 @media (max-width:768px){
   body{overflow-x:hidden}
   .page,.draft-page,.results-page{padding:12px 10px 90px;max-width:100%;width:100%;box-sizing:border-box}
-  .site-header{padding:0 10px;overflow:hidden}
+  .site-header{padding:0 10px}
   .header-steps{gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0}
+  .tutorial-btn{display:none!important}
   .hstep{font-size:11px;padding:6px 9px;white-space:nowrap}
   .draft-layout{flex-direction:column;gap:14px}
   .draft-sidebar{
@@ -1794,10 +1795,11 @@ function App(){
             ← Draft
           </button>
         )}
-        {/* Tutorial button */}
+        {/* Tutorial button — hidden on mobile */}
         <button
           onClick={()=>{setWalkthroughDone(false);}}
           title="Start tutorial"
+          className="tutorial-btn"
           style={{marginLeft:"auto",background:"rgba(255,255,255,0.07)",border:"1px solid rgba(255,255,255,0.15)",
             borderRadius:"50%",width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",
             color:"var(--text2)",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,lineHeight:1}}>
@@ -1806,7 +1808,7 @@ function App(){
         {screen==="setup"&&canStart&&(
           <button className="hot" onClick={startDraft}
             data-wt="start-draft"
-            style={{marginLeft:8,padding:"6px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
+            style={{marginLeft:4,padding:"6px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
             Start Draft →
           </button>
         )}
