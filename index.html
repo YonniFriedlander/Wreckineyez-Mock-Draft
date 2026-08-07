@@ -845,6 +845,17 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
   for(let i=0;i<N;i++){
     out[playerNames[i]]=survivalCount[i]/RUNS;
   }
+
+  // Enforce monotonicity: a lower-ranked player can't have higher survival than
+  // a better-ranked player. Sort by ECR rank, then cap each to the previous.
+  const sorted=[...availPlayers].sort((a,b)=>a.rank-b.rank);
+  let prevProb=1.0;
+  for(const p of sorted){
+    const capped=Math.min(out[p.name],prevProb);
+    out[p.name]=capped;
+    prevProb=capped;
+  }
+
   return out;
 }
 
