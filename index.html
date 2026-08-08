@@ -846,14 +846,20 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
     out[playerNames[i]]=survivalCount[i]/RUNS;
   }
 
-  // Enforce monotonicity: a lower-ranked player can't have higher survival than
-  // a better-ranked player. Sort by ECR rank, then cap each to the previous.
-  const sorted=[...availPlayers].sort((a,b)=>a.rank-b.rank);
-  let prevProb=1.0;
-  for(const p of sorted){
-    const capped=Math.min(out[p.name],prevProb);
-    out[p.name]=capped;
-    prevProb=capped;
+  // Enforce monotonicity within each position group:
+  // A worse player (higher rank number) must have >= survival prob than the better player.
+  // Walk from best to worst, ensuring each is >= the previous.
+  const posList=['QB','RB','WR','TE','DST','K'];
+  for(const pos of posList){
+    const posPlayers=[...availPlayers]
+      .filter(p=>p.pos===pos)
+      .sort((a,b)=>a.rank-b.rank); // best first (rank 1 = best)
+    let prev=0.0;
+    for(const p of posPlayers){
+      const floored=Math.max(out[p.name]??0, prev);
+      out[p.name]=floored;
+      prev=floored;
+    }
   }
 
   return out;
