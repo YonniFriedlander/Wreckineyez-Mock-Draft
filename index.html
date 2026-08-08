@@ -1763,18 +1763,18 @@ function App(){
   },[myRoster]);
 
   const [survival, setSurvival] = React.useState(null);
-  const survivalPicksKey=JSON.stringify({idx:currentPickIdx,pickCount:Object.keys(picks).length});
+  const availAllRef = React.useRef(availAll);
+  availAllRef.current = availAll;
+  const survivalPicksKey=JSON.stringify({idx:currentPickIdx,pickCount:Object.keys(picks).length,screen});
   React.useEffect(()=>{
     if(mode!=="mock"||done||screen!=="draft"){setSurvival(null);return;}
-    // Small delay so the UI renders the pick first before the heavy computation
     const t=setTimeout(()=>{
-      setSurvival(computeSurvival(availAll,picks,order,currentPickIdx,myIdx,
+      setSurvival(computeSurvival(availAllRef.current,picks,order,currentPickIdx,myIdx,
         numRounds,rosterSlots,tendencies,variability,teams));
-    },50);
+    },80);
     return()=>clearTimeout(t);
-  // Only recompute when a pick is made or the pick index advances — not on search/filter
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[survivalPicksKey,mode,done,screen]);
+  },[survivalPicksKey,mode,done]);
 
   // Always fetch fresh rankings on startup — ensures date and player list stay current
   // even when returning users have a cached version in localStorage
