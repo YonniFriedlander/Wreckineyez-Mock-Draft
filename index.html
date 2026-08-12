@@ -125,9 +125,9 @@ body{min-height:100vh}
 .step-head p{color:var(--text2);font-size:13px;margin-top:6px;line-height:1.55}
 
 /* ── cards ── */
-.countdown{display:flex;align-items:center;gap:16px;background:var(--s1);
+.countdown{display:flex;flex-direction:column;gap:6px;background:var(--s1);
   border:1px solid var(--border);border-radius:var(--rl);padding:14px 20px;
-  margin-bottom:20px;flex-wrap:wrap}
+  margin-bottom:20px;}
 .countdown-label{font-size:11px;font-weight:800;text-transform:uppercase;
   letter-spacing:0.1em;color:var(--text3);flex-shrink:0}
 .countdown-units{display:flex;gap:12px;flex:1;flex-wrap:wrap}
@@ -140,8 +140,9 @@ body{min-height:100vh}
   color:var(--mag);letter-spacing:0.04em;text-transform:uppercase;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
 @media(max-width:768px){
-  .countdown{padding:10px 14px;gap:10px}
+  .countdown{padding:10px 14px;}
   .countdown-num{font-size:22px}
+  .countdown-units{gap:8px;}
 }
 .card{background:var(--s1);border:1px solid var(--border);border-radius:var(--rl);padding:22px 24px;margin-bottom:14px}
 .card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text3);margin-bottom:16px}
@@ -1767,7 +1768,7 @@ function App(){
   availAllRef.current = availAll;
   const survivalPicksKey=JSON.stringify({idx:currentPickIdx,pickCount:Object.keys(picks).length,screen});
   React.useEffect(()=>{
-    if(mode!=="mock"||done||screen!=="draft"){setSurvival(null);return;}
+    if(done||screen!=="draft"){setSurvival(null);return;}
     const t=setTimeout(()=>{
       setSurvival(computeSurvival(availAllRef.current,picks,order,currentPickIdx,myIdx,
         numRounds,rosterSlots,tendencies,variability,teams));
@@ -2121,23 +2122,37 @@ function App(){
                           · next pick in {away} {away===1?"pick":"picks"}
                         </span>;
                       }
-                    } else if(mode==="mock"){
+                    } else {
                       const picksAway=myNextPos;
-                      const upTeams=upcoming.slice(0,Math.min(3,myNextPos)).map(p=>teams[p.teamIdx]);
-                      return(
-                        <>
-                          {upTeams.length>0&&<span style={{marginLeft:10,color:"var(--text3)"}}>then: {upTeams.join(", ")}</span>}
-                          {picksAway>0&&(
-                            <span style={{marginLeft:10,fontWeight:700,
-                              color:picksAway<=3?"var(--warn)":picksAway<=6?"var(--text2)":"var(--text3)"}}>
-                              · {picksAway} {picksAway===1?"pick":"picks"} away
-                            </span>
-                          )}
-                        </>
-                      );
+                      if(mode==="mock"){
+                        const upTeams=upcoming.slice(0,Math.min(3,myNextPos)).map(p=>teams[p.teamIdx]);
+                        return(
+                          <>
+                            {upTeams.length>0&&<span style={{marginLeft:10,color:"var(--text3)"}}>then: {upTeams.join(", ")}</span>}
+                          </>
+                        );
+                      }
                     }
                   })()}
                 </div>
+                {(()=>{
+                  if(isMyTurn) return null;
+                  const upcoming=order.slice(currentPickIdx).filter(p=>!picks[p.overall]);
+                  const myNextPos=upcoming.findIndex(p=>p.teamIdx===myIdx);
+                  if(myNextPos<=0) return null;
+                  const color=myNextPos<=3?"var(--mag)":myNextPos<=6?"var(--warn)":"var(--text3)";
+                  return(
+                    <div style={{marginTop:6,display:"flex",alignItems:"baseline",gap:6}}>
+                      <span style={{fontFamily:"'Barlow Condensed',sans-serif",fontSize:36,
+                        fontWeight:900,color,lineHeight:1}}>
+                        {myNextPos}
+                      </span>
+                      <span style={{fontSize:12,color:"var(--text3)",fontWeight:600}}>
+                        {myNextPos===1?"pick":"picks"} away
+                      </span>
+                    </div>
+                  );
+                })()}
                 <div className="needs-row">
                   {["QB","RB","WR","TE"].map(pos=>{
                     const have=myPosCounts[pos]||0;
@@ -2168,6 +2183,18 @@ function App(){
                   style={{fontSize:11,padding:"4px 10px",borderColor:"var(--border2)"}}>
                   ↔ Trade pick
                 </button>
+                {Object.keys(picks).length>0&&(
+                  <button className="ghost" onClick={()=>{
+                    const allPicked=Object.keys(picks).map(Number).sort((a,b)=>a-b);
+                    const lastOverall=allPicked[allPicked.length-1];
+                    setPicks(p=>{const n={...p};delete n[lastOverall];return n;});
+                    setCurrentPickIdx(idx=>Math.max(0,idx-1));
+                    setLastPick(null);
+                  }}
+                    style={{fontSize:11,padding:"4px 10px",borderColor:"var(--border2)",color:"var(--text3)"}}>
+                    ↩ Undo
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -3060,30 +3087,30 @@ function Countdown(){
 
   return(
     <div className="countdown">
-      <span className="countdown-label">Draft in</span>
-      <div className="countdown-units">
-        {d>0&&(
+      <span style={{fontSize:11,color:"var(--text3)"}}>Aug 28 · 7:00 PM EST</span>
+      <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"nowrap"}}>
+        <span className="countdown-label">Draft in</span>
+        <div className="countdown-units">
+          {d>0&&(
+            <div className="countdown-unit">
+              <span className="countdown-num">{d}</span>
+              <span className="countdown-sub">{d===1?"day":"days"}</span>
+            </div>
+          )}
           <div className="countdown-unit">
-            <span className="countdown-num">{d}</span>
-            <span className="countdown-sub">{d===1?"day":"days"}</span>
+            <span className="countdown-num">{pad(h)}</span>
+            <span className="countdown-sub">hrs</span>
           </div>
-        )}
-        <div className="countdown-unit">
-          <span className="countdown-num">{pad(h)}</span>
-          <span className="countdown-sub">hrs</span>
-        </div>
-        <div className="countdown-unit">
-          <span className="countdown-num">{pad(m)}</span>
-          <span className="countdown-sub">min</span>
-        </div>
-        <div className="countdown-unit">
-          <span className="countdown-num">{pad(s)}</span>
-          <span className="countdown-sub">sec</span>
+          <div className="countdown-unit">
+            <span className="countdown-num">{pad(m)}</span>
+            <span className="countdown-sub">min</span>
+          </div>
+          <div className="countdown-unit">
+            <span className="countdown-num">{pad(s)}</span>
+            <span className="countdown-sub">sec</span>
+          </div>
         </div>
       </div>
-      <span style={{fontSize:11,color:"var(--text3)",flexShrink:0}}>
-        Aug 28 · 7:00 PM EST
-      </span>
     </div>
   );
 }
