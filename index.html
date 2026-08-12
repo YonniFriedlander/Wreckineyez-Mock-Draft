@@ -1974,8 +1974,7 @@ function App(){
                   style={{padding:"10px 28px",fontSize:14}}>Next: Draft Board →</button>
               </div>
 
-              {mode==="mock"&&(
-                <>
+              <>
                   {/* 4. Randomness */}
                   <div className="card">
                     <div className="card-title">Randomness</div>
@@ -2061,7 +2060,6 @@ function App(){
                     </span>
                   </div>
                 </>
-              )}
 
               <div style={{display:"flex",justifyContent:"flex-end",marginTop:6}}>
                 <button className="primary" onClick={()=>setSetupTab("board")}
