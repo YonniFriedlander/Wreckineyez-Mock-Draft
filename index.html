@@ -1139,7 +1139,7 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
 /* ── App ── */
 // ── History data ─────────────────────────────────────────────────────────
 const HIST_COLORS={
-  Yonni:'#e8366e',Aaron:'#2dd4bf',Chow:'#f59e0b',Evan:'#a78bfa',
+  Yonni:'#a07070',Aaron:'#2dd4bf',Chow:'#f59e0b',Evan:'#a78bfa',
   Rob:'#60a5fa',Budd:'#34d399',Bram:'#fb923c',James:'#f472b6',
   Pat:'#818cf8',Cory:'#4ade80',Leigh:'#e879f9',Liam:'#38bdf8',
   Stan:'#fbbf24',Bruce:'#94a3b8',
@@ -1432,9 +1432,38 @@ function HistoryScreen(){
         <Leaderboard title="Avg Pts/Season (3+ yrs)" minSeasons={3}
           sortFn={st=>st.pts/st.seasons}
           fmtFn={st=>Math.round(st.pts/st.seasons).toLocaleString()}/>
-        <Leaderboard title="Best Single Season"
-          sortFn={st=>st.best}
-          fmtFn={st=>Math.round(st.best).toLocaleString()}/>
+        {(()=>{
+          // Top 10 single seasons by PPG across all managers and years
+          const allSeasons=[];
+          HIST_SEASONS.forEach(s=>{
+            const games=s.teams===14?14:13;
+            s.data.forEach(d=>{
+              if(d.pts) allSeasons.push({o:d.o,year:s.year,pts:d.pts,ppg:d.pts/games});
+            });
+          });
+          allSeasons.sort((a,b)=>b.ppg-a.ppg);
+          const top10=allSeasons.slice(0,10);
+          return(
+            <div className="hist-lb-card">
+              <div className="hist-lb-title">Best Single Seasons (Pts/Game)</div>
+              {top10.map(({o,year,ppg},i)=>{
+                const active=HIST_ACTIVE.has(o);
+                return(
+                  <div key={`${o}-${year}`} className="hist-lb-row">
+                    <span style={{fontSize:10,color:"var(--text3)",width:16,flexShrink:0,textAlign:"right"}}>{i+1}</span>
+                    <span style={{flex:1,fontWeight:600,color:active?(HIST_COLORS[o]||"#94a3b8"):"var(--text3)"}}>
+                      {o}{!active&&<span style={{fontSize:9,marginLeft:4,color:"var(--text3)"}}>✕</span>}
+                    </span>
+                    <span style={{fontSize:10,color:"var(--text3)",marginRight:8}}>{year}</span>
+                    <span style={{fontWeight:700,fontVariantNumeric:"tabular-nums",color:"var(--teal)"}}>
+                      {Math.round(ppg)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
         <Leaderboard title="Playoff Appearances"
           sortFn={st=>st.playoffs}
           fmtFn={st=>`${st.playoffs} (${(st.playoffs/st.seasons*100).toFixed(0)}%)`}/>
@@ -3954,21 +3983,113 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
 
 /* ── Rosters ── */
 function RostersTab({teams,rosters,myTeam}){
-  const[open,setOpen]=useState(myTeam);
+  const POS_ORDER=["QB","RB","RB","WR","WR","WR","TE","FLEX","DST","BN","BN","BN","BN","BN"];
+  const POS_LABELS=["QB","RB1","RB2","WR1","WR2","WR3","TE","FLEX","DST","BN1","BN2","BN3","BN4","BN5"];
+
+  // Build grid: for each team, slot players into position rows
+  function buildSlots(team){
+    const roster=[...(rosters[team]||[])].sort((a,b)=>a.pickNum-b.pickNum);
+    const counts={QB:0,RB:0,WR:0,TE:0,DST:0,K:0};
+    const slots=Array(POS_LABELS.length).fill(null);
+    const bench=[];
+    // Fill starters first
+    for(const p of roster){
+      const pos=p.pos;
+      if(pos==="QB"&&counts.QB<1){slots[0]=p;counts.QB++;}
+      else if(pos==="RB"&&counts.RB<2){slots[1+counts.RB]=p;counts.RB++;}
+      else if(pos==="WR"&&counts.WR<3){slots[3+counts.WR]=p;counts.WR++;}
+      else if(pos==="TE"&&counts.TE<1){slots[6]=p;counts.TE++;}
+      else if(pos==="DST"&&counts.DST<1){slots[8]=p;counts.DST++;}
+      else bench.push(p);
+    }
+    // Fill FLEX with best remaining RB/WR/TE
+    if(!slots[7]){
+      const flexIdx=bench.findIndex(p=>["RB","WR","TE"].includes(p.pos));
+      if(flexIdx>=0){slots[7]=bench.splice(flexIdx,1)[0];}
+    }
+    // Fill bench slots
+    bench.forEach((p,i)=>{if(i<5)slots[9+i]=p;});
+    return slots;
+  }
+
+  const teamSlots={};
+  teams.forEach(t=>{teamSlots[t]=buildSlots(t);});
+
+  const posColors={QB:"var(--pos-qb,#a78bfa)",RB:"var(--pos-rb,#34d399)",
+    WR:"var(--pos-wr,#60a5fa)",TE:"var(--pos-te,#f59e0b)",
+    DST:"var(--pos-dst,#94a3b8)",K:"var(--pos-k,#94a3b8)"};
+
+  // Abbreviate long names
+  function abbrev(name){
+    if(!name) return "";
+    const parts=name.split(" ");
+    if(parts.length<2) return name;
+    // Last name only if ≤10 chars, else truncate
+    const last=parts[parts.length-1];
+    return last.length<=11 ? last : last.slice(0,10)+"…";
+  }
+
   return(
-    <div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:16}}>
-        {teams.map(t=>(
-          <button key={t} onClick={()=>setOpen(t)}
-            style={{padding:"5px 14px",fontSize:13,fontWeight:open===t?800:500,
-              background:open===t?"var(--teal)":"var(--s2)",
-              color:open===t?"#0B0B14":"var(--text2)",
-              borderColor:open===t?"var(--teal)":"var(--border2)"}}>
-            {t}<span style={{opacity:.5,fontWeight:400,marginLeft:5}}>({(rosters[t]||[]).length})</span>
-          </button>
-        ))}
-      </div>
-      <RosterView roster={rosters[open]||[]}/>
+    <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
+      <table style={{borderCollapse:"collapse",fontSize:11,width:"100%",minWidth:900}}>
+        <thead>
+          <tr>
+            <th style={{position:"sticky",left:0,background:"var(--bg)",zIndex:2,
+              padding:"6px 8px",textAlign:"left",fontSize:10,fontWeight:800,
+              textTransform:"uppercase",letterSpacing:"0.07em",color:"var(--text3)",
+              borderBottom:"2px solid var(--border2)",minWidth:48}}>
+              Slot
+            </th>
+            {teams.map(t=>(
+              <th key={t} style={{padding:"6px 6px",textAlign:"center",fontSize:10,fontWeight:800,
+                textTransform:"uppercase",letterSpacing:"0.06em",
+                color:t===myTeam?"var(--teal)":"var(--text3)",
+                borderBottom:"2px solid var(--border2)",minWidth:72,
+                borderLeft:"1px solid var(--border)"}}>
+                {t}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {POS_LABELS.map((label,rowIdx)=>{
+            const isBench=label.startsWith("BN");
+            const posCat=POS_ORDER[rowIdx];
+            const posColor=posColors[posCat]||"var(--text3)";
+            return(
+              <tr key={label} style={{background:isBench?"rgba(0,0,0,0.15)":"transparent"}}>
+                <td style={{position:"sticky",left:0,background:isBench?"var(--s1)":"var(--bg)",
+                  zIndex:1,padding:"5px 8px",fontWeight:700,fontSize:10,
+                  textTransform:"uppercase",letterSpacing:"0.06em",
+                  color:isBench?"var(--text3)":posColor,
+                  borderBottom:"1px solid var(--border)",whiteSpace:"nowrap"}}>
+                  {label}
+                </td>
+                {teams.map(t=>{
+                  const player=teamSlots[t][rowIdx];
+                  const isMyTeam=t===myTeam;
+                  return(
+                    <td key={t} style={{padding:"4px 6px",textAlign:"center",
+                      borderBottom:"1px solid var(--border)",
+                      borderLeft:"1px solid var(--border)",
+                      background:isMyTeam?"rgba(45,212,191,0.04)":"transparent"}}>
+                      {player?(
+                        <span style={{fontWeight:isMyTeam?700:500,
+                          color:isMyTeam?"var(--teal)":"var(--text2)",
+                          fontSize:11,whiteSpace:"nowrap"}}>
+                          {abbrev(player.name)}
+                        </span>
+                      ):(
+                        <span style={{color:"var(--border2)",fontSize:10}}>—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
