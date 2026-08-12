@@ -627,6 +627,10 @@ const DEF_TRADED_PICKS=[
   {fromPick:83,toTeam:"Evan"},   // Stan R6 → Evan
   {fromPick:77,toTeam:"Yonni"},  // James R6 → Yonni
   {fromPick:13,toTeam:"James"},  // Yonni R1 → James
+  {fromPick:115,toTeam:"Rob"},   // Bram R9 → Rob  (9.03)
+  {fromPick:88,toTeam:"Bram"},   // Rob R7 → Bram  (7.04)
+  {fromPick:59,toTeam:"Yonni"},  // Bram R5 → Yonni (5.03)
+  {fromPick:100,toTeam:"Bram"},  // Yonni R8 → Bram (8.02)
 ];
 const SK="wreckineyez-mock-v5";
 
@@ -1496,10 +1500,26 @@ function App(){
   const patchedTrades = (() => {
     const hasBramChow = savedTrades.some(t=>t.fromPick===74&&t.toTeam==="Bram");
     const hasOldBruceBram = savedTrades.some(t=>t.fromPick===89&&t.toTeam==="Bram");
-    if(hasBramChow) return savedTrades; // already up to date
-    return savedTrades
-      .map(t=>t.fromPick===89&&t.toTeam==="Bram" ? {...t,toTeam:"Chow"} : t) // update 89→Chow
-      .concat(hasBramChow ? [] : [{fromPick:74,toTeam:"Bram"}]); // add 74→Bram
+    let trades = savedTrades;
+    // Patch Bram→Chow trade
+    if(!hasBramChow){
+      trades = trades
+        .map(t=>t.fromPick===89&&t.toTeam==="Bram" ? {...t,toTeam:"Chow"} : t)
+        .concat([{fromPick:74,toTeam:"Bram"}]);
+    }
+    // Add new trades if missing
+    const newTrades = [
+      {fromPick:115,toTeam:"Rob"},
+      {fromPick:88,toTeam:"Bram"},
+      {fromPick:59,toTeam:"Yonni"},
+      {fromPick:100,toTeam:"Bram"},
+    ];
+    for(const t of newTrades){
+      if(!trades.some(x=>x.fromPick===t.fromPick&&x.toTeam===t.toTeam)){
+        trades = [...trades, t];
+      }
+    }
+    return trades;
   })();
   const[tradedPicks,setTradedPicks]=useState(patchedTrades);
   const savedRoster=saved.rosterSlots||DEF_ROSTER;
