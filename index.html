@@ -4022,10 +4022,11 @@ function RostersTab({teams,rosters,myTeam}){
   // Abbreviate long names
   function abbrev(name){
     if(!name) return "";
-    const parts=name.split(" ");
-    if(parts.length<2) return name;
-    // Last name only if ≤10 chars, else truncate
-    const last=parts[parts.length-1];
+    const suffixes=new Set(["jr.","jr","sr.","sr","ii","iii","iv"]);
+    const parts=name.trim().split(" ");
+    const filtered=parts.filter(p=>!suffixes.has(p.toLowerCase()));
+    if(filtered.length<2) return name;
+    const last=filtered[filtered.length-1];
     return last.length<=11 ? last : last.slice(0,10)+"…";
   }
 
