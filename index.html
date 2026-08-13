@@ -1833,6 +1833,18 @@ function App(){
     return()=>clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
+
+  // Warn before page unload if draft is in progress
+  useEffect(()=>{
+    const handler=e=>{
+      if(screen==="draft"&&Object.keys(picks).length>0){
+        e.preventDefault();
+        e.returnValue="";
+      }
+    };
+    window.addEventListener("beforeunload",handler);
+    return()=>window.removeEventListener("beforeunload",handler);
+  },[screen,picks]);
   useEffect(()=>{
     if(done&&screen==="draft"){
       const t=setTimeout(()=>setScreen("results"),600);
@@ -1904,7 +1916,12 @@ function App(){
           </button>
         )}
         {screen==="draft"&&(
-          <button onClick={()=>{clearTimeout(simRef.current);setScreen("setup");setPicks({});setCurrentPickIdx(0);setIsSimming(false)}}
+          <button onClick={()=>{
+            if(Object.keys(picks).length>0){
+              if(!window.confirm("Go back to setup? Your current draft progress will be lost.")) return;
+            }
+            clearTimeout(simRef.current);setScreen("setup");setPicks({});setCurrentPickIdx(0);setIsSimming(false);
+          }}
             style={{background:"rgba(255,255,255,0.07)",borderColor:"var(--border2)",
               color:"var(--text2)",fontSize:12,padding:"5px 13px"}}>
             ← Setup
@@ -1924,6 +1941,40 @@ function App(){
       {screen==="setup"&&(
         <div className="page" style={{overflowX:"visible"}}>
           <Countdown/>
+
+          {/* ── Continue Draft banner ── */}
+          {(()=>{
+            const saved=load();
+            const savedPicks=saved.picks||{};
+            const pickCount=Object.keys(savedPicks).length;
+            if(pickCount===0) return null;
+            return(
+              <div style={{background:"linear-gradient(135deg,rgba(45,212,191,0.12),rgba(45,212,191,0.04))",
+                border:"1px solid rgba(45,212,191,0.3)",borderRadius:"var(--rl)",
+                padding:"14px 18px",marginBottom:20,
+                display:"flex",alignItems:"center",gap:14,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:13,color:"var(--teal)"}}>
+                    Draft in progress
+                  </div>
+                  <div style={{fontSize:11,color:"var(--text3)",marginTop:2}}>
+                    {pickCount} pick{pickCount!==1?"s":""} made — you can pick up where you left off
+                  </div>
+                </div>
+                <button className="hot" onClick={()=>{
+                  setScreen("draft");setDraftTab("available");
+                }} style={{padding:"8px 20px",fontSize:13,fontWeight:800,flexShrink:0}}>
+                  Continue Draft →
+                </button>
+                <button className="ghost" onClick={()=>{
+                  if(window.confirm("Clear the saved draft and start fresh?"))
+                    {setPicks({});setCurrentPickIdx(0);}
+                }} style={{fontSize:11,padding:"6px 12px",color:"var(--text3)",flexShrink:0}}>
+                  Clear
+                </button>
+              </div>
+            );
+          })()}
 
           {/* ── Settings ── */}
           {setupTab==="settings"&&(
