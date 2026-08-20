@@ -1734,11 +1734,7 @@ function App(){
     const nextIdx=advance(currentPickIdx+1,np,order);
     setCurrentPickIdx(nextIdx);
     setSelPlayer(null);setSearch("");
-    // Snarky msg: ~1-in-8 picks when not drafting as Yonni
-    if(myTeam!=="Yonni"&&Math.random()<0.125){
-      setSnarkTitleText(snarkTitle());
-      setSnarkMsg(snarkMessage());
-    }
+    // Snarky msg disabled during draft — shown at results instead
     // In mock mode, immediately sim the remaining CPU picks
     if(mode==="mock"){
       // Kick off sim from the next pick
@@ -2404,26 +2400,6 @@ function App(){
           {draftTab==="rosters"&&<RostersTab teams={teams} rosters={rosters} myTeam={myTeam}/>}
           {draftTab==="myteam"&&<RosterView roster={rosters[myTeam]||[]} showCounts/>}
 
-          {snarkMsg&&(
-            <div className="overlay" onClick={()=>setSnarkMsg(null)}>
-              <div style={{background:"var(--s1)",border:"2px solid var(--mag-border)",
-                borderRadius:"var(--rxl)",padding:"32px 36px",maxWidth:380,textAlign:"center",
-                boxShadow:"0 24px 80px rgba(232,54,110,0.3)"}} onClick={e=>e.stopPropagation()}>
-                <div style={{fontSize:28,marginBottom:10}}>😬</div>
-                <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,fontSize:20,
-                  textTransform:"uppercase",letterSpacing:"0.04em",color:"var(--mag)",marginBottom:10}}>
-                  {snarkTitleText}
-                </div>
-                <div style={{fontSize:15,color:"var(--text)",lineHeight:1.5,marginBottom:20}}>
-                  "{snarkMsg}"
-                </div>
-                <button className="hot" onClick={()=>setSnarkMsg(null)}
-                  style={{padding:"9px 28px",fontSize:13,fontWeight:800}}>
-                  I regret nothing
-                </button>
-              </div>
-            </div>
-          )}
           {/* Feature 9: Mid-draft trade modal (outside layout columns, still in draft-page) */}
           {tradeModal&&(
             <div className="overlay" onClick={()=>setTradeModal(false)}>
@@ -2630,7 +2606,9 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
   const[focus,setFocus]=useState(null);
   const[resultsTab,setResultsTab]=useState("results");
   const canvasRef=useRef(null);
-  const[grade]=useState(()=>isFriends?fakeGrade():null);
+  const[grade]=useState(()=>isFriends?(myTeam==="Aaron"?aaronGrade():fakeGrade()):null);
+  const[snarkText]=useState(()=>isFriends?(myTeam==="Aaron"?aaronMessage():snarkMessage()):null);
+  const[snarkTitleStr]=useState(()=>isFriends?(myTeam==="Aaron"?aaronTitle():snarkTitle()):null);
   const[standings]=useState(()=>
     projectStandings(teams,rosters,rosterSlots,picks,order,myTeam)
   );
@@ -2780,23 +2758,23 @@ function ResultsPage({teams,rosters,myTeam,picks,order,onDraftAgain,onExportCSV,
 
       {/* Results tab */}
       {resultsTab==="results"&&isFriends&&grade&&(
-        <div style={{background:"var(--s1)",border:"2px solid var(--mag-border)",
+        <div style={{background:"var(--s1)",border:`2px solid ${myTeam==="Aaron"?"rgba(245,158,11,0.4)":"var(--mag-border)"}`,
           borderRadius:"var(--rl)",padding:"20px 24px",marginBottom:20,
           display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
           <div style={{textAlign:"center",minWidth:80}}>
             <div style={{fontFamily:"'Barlow Condensed',sans-serif",fontWeight:900,
-              fontSize:72,lineHeight:1,color:"var(--mag)"}}>{grade}</div>
+              fontSize:72,lineHeight:1,color:myTeam==="Aaron"?"var(--gold)":"var(--mag)"}}>{grade}</div>
             <div style={{fontSize:11,fontWeight:700,textTransform:"uppercase",
               letterSpacing:"0.08em",color:"var(--text3)"}}>Draft Grade</div>
           </div>
           <div style={{flex:1}}>
             <div style={{fontSize:14,fontWeight:700,color:"var(--text)",marginBottom:6}}>
-              {grade==="F-"?"Historically bad draft. Truly."
-                :grade==="F"?"Not great. Not great at all."
-                :grade==="D-"?"Some concerning choices were made today."
-                :"Participation award: issued."}
+              {snarkTitleStr}
             </div>
-            <div style={{fontSize:12,color:"var(--text3)",lineHeight:1.6}}>
+            <div style={{fontSize:12,color:"var(--text3)",lineHeight:1.6,marginBottom:8}}>
+              {snarkText}
+            </div>
+            <div style={{fontSize:11,color:"var(--text3)",fontStyle:"italic",lineHeight:1.5}}>
               Our proprietary draft grading algorithm — trained on thousands of drafts, incapable of
               bias, and completely indifferent to your feelings — has reviewed your selections. This is its verdict.
             </div>
@@ -3104,16 +3082,131 @@ const SNARKY=[
   "The fantasy gods have logged this pick as evidence.",
   "A bold choice from someone with so little to lose.",
   "This pick is why there are rebuild seasons.",
+  // 50 new quips
+  "Your team just applied for FEMA assistance.",
+  "That pick has the energy of a 3am decision.",
+  "Somewhere a beat reporter just wrote 'fantasy red flag.'",
+  "This is going on your permanent record.",
+  "Your trade value just dropped in real time.",
+  "Plot twist: it somehow gets worse from here.",
+  "The sleeper pick that never wakes up.",
+  "Incredible commitment to the bit.",
+  "Bold. Brave. Wrong.",
+  "That player hasn't been relevant since the Obama administration.",
+  "Your team now has more question marks than a ransom note.",
+  "A pick so bad it's looping back around to interesting.",
+  "Chow is literally laughing right now.",
+  "Your opponents have already spent their winnings.",
+  "The ghosts of fantasy seasons past are cringing.",
+  "That's not a football player, that's a prayer.",
+  "This roster has the structural integrity of wet cardboard.",
+  "Technically a pick. Barely.",
+  "That guy is on your bench until he's cut. Then also on your bench.",
+  "Your team just entered its villain era.",
+  "Truly a pick for the ages. The dark ages.",
+  "I'd say you were robbed, but you did this to yourself.",
+  "Your starting lineup just asked to be DNR'd.",
+  "That player's highlight reel is a blank tape.",
+  "Brave of you to draft a bye week with legs.",
+  "The analytics community has left the chat.",
+  "This is what happens when you draft with your heart instead of your brain. Or either.",
+  "Fantasy immortality awaits. In the wrong direction.",
+  "Your depth chart now doubles as a list of disappointments.",
+  "This pick is load-bearing for the other team's championship.",
+  "That's not a reach, that's a leap off a cliff.",
+  "Your team's ceiling just moved into the basement.",
+  "Somewhere, a fantasy podcast is dedicating an episode to this.",
+  "That player's best game was in week 3 of 2021. It was also his last.",
+  "I've seen more upside in a flat soda.",
+  "Your opponents just added you to their Christmas card list.",
+  "Peak fantasy football: maximum hope, minimum research.",
+  "The injury report has been notified.",
+  "This team is going places. The cellar, specifically.",
+  "That's a pick with all the upside of a participation ribbon.",
+  "Your team just became someone else's favorite matchup.",
+  "Noted. Logged. Screenshotted.",
+  "That player is one bad practice away from being a podcast cautionary tale.",
+  "I've seen better draft boards written in crayon.",
+  "You're building something here. I'm just not sure what.",
+  "Your roster just activated its out-of-office reply.",
+  "That pick aged faster than milk in July.",
+  "Somewhere, a coach is very happy you don't work for them.",
+  "This is what they mean by 'trusting the process.' Please stop trusting it.",
+  "A truly original pick. Horrifyingly so.",
 ];
 const SNARK_TITLES=[
   "⚠️ Bad Pick Alert","🚨 Pick Emergency","😬 Yikes.","🔴 Pick Review Required",
   "📋 Pick Assessment","❗ Questionable Decision Detected","🧐 Pick Audit",
   "📣 Public Service Announcement","🚑 Fantasy First Aid Needed",
+  "🫣 Oh No.","💀 Pick Mortality Event","🤦 Really?","🔍 Pick Investigation",
+  "📉 Value Destruction Detected","🚧 Draft Hazard","🧯 Fire Extinguisher Needed",
 ];
 const FAKE_GRADES=["D","D-","F","F-"];
+const AARON_GRADES=["A","A","A+","A+","A++"];
+const AARON_QUIPS=[
+  "Flawless. Absolutely flawless. The committee is in tears.",
+  "This draft should be studied in universities.",
+  "Every pick a masterpiece. Every round a symphony.",
+  "The fantasy gods themselves took notes.",
+  "Historians will mark this as a turning point in the sport.",
+  "Your opponents have already conceded. Quietly. In shame.",
+  "A draft so clean it squeaks.",
+  "The algorithm couldn't have done better. You've broken the algorithm.",
+  "This is what peak performance looks like. Frame it.",
+  "Scouts from twelve leagues are calling. Don't answer. You don't need them.",
+  "The waiver wire is irrelevant to you. You have everything.",
+  "Your roster is a work of art. Hang it in the Louvre.",
+  "Every other manager just checked their schedule to see when they play you. They sighed.",
+  "Bold. Brilliant. Inevitable.",
+  "A draft for the ages. The golden ages.",
+  "You turned a snake draft into a chess match. And you won in four moves.",
+  "The chat is silent. Out of respect.",
+  "Your projected points should be illegal.",
+  "Somewhere, a fantasy expert is updating their rankings because of you.",
+  "This roster has the structural integrity of a Swiss watch.",
+  "I've seen rosters that had one weakness. Yours has zero.",
+  "Your opponents' trade requests are already incoming.",
+  "The trophy is waiting. It knows.",
+  "Fourteen teams drafted today. One drafted correctly.",
+  "They're going to name a draft strategy after you.",
+  "This is what it looks like when preparation meets brilliance.",
+  "Every position: addressed. Every need: met. Every opponent: scared.",
+  "The fantasy gods didn't give you picks. They gave you gifts.",
+  "Not a single wasted slot. Not one.",
+  "Your depth chart reads like a starting lineup. Both of them.",
+  "People will be asking where you learned to draft like this. Don't tell them.",
+  "A clinic. An absolute clinic.",
+  "Your team's floor is higher than everyone else's ceiling.",
+  "That last pick? Still good. They're all good.",
+  "This draft was so clean they could serve it at a restaurant.",
+  "Other managers drafted players. You drafted a dynasty.",
+  "The algorithms are crying. Happy tears.",
+  "You didn't reach. Not once. Not even slightly.",
+  "Your bench could start for half this league.",
+  "That's not a depth chart, that's a threat.",
+  "Every round better than the last. Somehow.",
+  "The envy in this room is palpable.",
+  "They're going to put this in the Wreckineyez Hall of Fame.",
+  "Whoever drafted ahead of you left so much on the board.",
+  "Your opponents just checked your roster and closed their laptops.",
+  "This is what happens when you actually prepare.",
+  "A draft so good it should come with a certificate.",
+  "The fantasy equivalent of a perfect game.",
+  "Unimpeachable. Undeniable. Unavoidable. You're winning.",
+  "Frankly, the rest of us should just go home.",
+];
+const AARON_TITLES=[
+  "🏆 Elite Draft Detected","✨ Masterclass Complete","🌟 Peak Performance",
+  "🎯 Perfection Achieved","👑 Dynasty Mode Activated","🔥 Untouchable",
+  "📈 Maximum Value Extracted","💎 Flawless Execution","🚀 Championship Locked",
+  "🎓 Draft Degree Awarded",
+];
 function snarkMessage(){return SNARKY[Math.floor(Math.random()*SNARKY.length)];}
 function snarkTitle(){return SNARK_TITLES[Math.floor(Math.random()*SNARK_TITLES.length)];}
 function fakeGrade(){return FAKE_GRADES[Math.floor(Math.random()*FAKE_GRADES.length)];}
+function aaronGrade(){return AARON_GRADES[Math.floor(Math.random()*AARON_GRADES.length)];}
+function aaronMessage(){return AARON_QUIPS[Math.floor(Math.random()*AARON_QUIPS.length)];}
+function aaronTitle(){return AARON_TITLES[Math.floor(Math.random()*AARON_TITLES.length)];}
 // ADP → expected 0 PPR standard points model
 // Fitted to 154 player-seasons 2021-2024 (FFC non-PPR 12-team ADP + PFR standard pts)
 // QB: linear  pts = 429.3 - 1.82*ecr   (R²=0.71)
