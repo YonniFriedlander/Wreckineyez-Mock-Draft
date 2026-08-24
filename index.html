@@ -631,6 +631,10 @@ const DEF_TRADED_PICKS=[
   {fromPick:88,toTeam:"Bram"},   // Rob R7 → Bram  (7.04)
   {fromPick:59,toTeam:"Yonni"},  // Bram R5 → Yonni (5.03)
   {fromPick:100,toTeam:"Bram"},  // Yonni R8 → Bram (8.02)
+  {fromPick:19,toTeam:"Stan"},   // Budd R2 → Stan
+  {fromPick:75,toTeam:"Stan"},   // Budd R6 → Stan
+  {fromPick:30,toTeam:"Budd"},   // Stan R3 → Budd
+  {fromPick:55,toTeam:"Budd"},   // Stan R4 → Budd
 ];
 const SK="wreckineyez-mock-v5";
 
@@ -1542,6 +1546,10 @@ function App(){
       {fromPick:88,toTeam:"Bram"},
       {fromPick:59,toTeam:"Yonni"},
       {fromPick:100,toTeam:"Bram"},
+      {fromPick:19,toTeam:"Stan"},
+      {fromPick:75,toTeam:"Stan"},
+      {fromPick:30,toTeam:"Budd"},
+      {fromPick:55,toTeam:"Budd"},
     ];
     for(const t of newTrades){
       if(!trades.some(x=>x.fromPick===t.fromPick&&x.toTeam===t.toTeam)){
