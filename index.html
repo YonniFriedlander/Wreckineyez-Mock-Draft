@@ -733,18 +733,82 @@ function needPenalty(pos,roster,round,nRounds,slots){
   if(pos==="DST"){if(!(slots.DST>0))return 99999;if(cnt>=1)return 999;if(!late)return 8;return 1;}
   return 1;
 }
-function simPick(players,drafted,variability,roster,round,nRounds,slots,tend){
+// Sleeper ADP snapshot (Draft Sharks, Aug 25 2026, standard scoring)
+const SLEEPER_ADP={
+  "Bijan Robinson":1,"Jahmyr Gibbs":2,"Jonathan Taylor":3,"Christian McCaffrey":4,
+  "James Cook":5,"Ja'Marr Chase":6,"Derrick Henry":7,"De'Von Achane":8,
+  "Puka Nacua":9,"Jaxon Smith-Njigba":10,"Ashton Jeanty":11,"Omarion Hampton":12,
+  "Kyren Williams":13,"Saquon Barkley":14,"CeeDee Lamb":15,"Josh Allen":16,
+  "Jeremiyah Love":17,"Amon-Ra St. Brown":18,"Chase Brown":19,"Justin Jefferson":20,
+  "Drake London":21,"Josh Jacobs":22,"Trey McBride":23,"Kenneth Walker":24,
+  "Lamar Jackson":25,"Nico Collins":26,"Breece Hall":27,"George Pickens":28,
+  "Brock Bowers":29,"Malik Nabers":30,"Chris Olave":31,"Javonte Williams":32,
+  "Bucky Irving":33,"A.J. Brown":34,"Rashee Rice":35,"Travis Etienne":36,
+  "Tee Higgins":37,"Tetairoa McMillan":38,"Garrett Wilson":39,"TreVeyon Henderson":40,
+  "Luther Burden III":41,"Cameron Skattebo":42,"Jaylen Waddle":43,"Bhayshul Tuten":44,
+  "Quinshon Judkins":45,"Davante Adams":46,"Colston Loveland":47,"Ladd McConkey":48,
+  "D'Andre Swift":49,"David Montgomery":50,"Drake Maye":51,"Zay Flowers":52,
+  "Jaylen Warren":53,"Jameson Williams":54,"DeVonta Smith":55,"Joe Burrow":56,
+  "Emeka Egbuka":57,"Terry McLaurin":58,"RJ Harvey":59,"Tyler Warren":60,
+  "Rhamondre Stevenson":61,"D.J. Moore":62,"Mike Evans":63,"Carnell Tate":64,
+  "Kyle Monangai":65,"Jordyn Tyson":66,"Harold Fannin Jr.":67,"Tony Pollard":68,
+  "Christian Watson":69,"Rico Dowdle":70,"Jayden Daniels":71,"Chuba Hubbard":72,
+  "Rome Odunze":73,"Blake Corum":74,"J.K. Dobbins":75,"Jalen Hurts":76,
+  "Tucker Kraft":77,"Courtland Sutton":78,"Kyle Pitts":79,"D.K. Metcalf":80,
+  "Parker Washington":81,"Michael Wilson":82,"Jakobi Meyers":83,"Brian Thomas Jr.":84,
+  "Sam LaPorta":85,"Jadarian Price":86,"Brian Robinson Jr.":87,"Dalton Kincaid":88,
+  "Marvin Harrison Jr.":89,"Oronde Gadsden II":90,"Jaxson Dart":91,"Aaron Jones":92,
+  "Kenneth Gainwell":93,"Justin Herbert":94,"Chris Godwin":95,"Tyler Allgeier":96,
+  "Caleb Williams":97,"Hunter Henry":98,"James Conner":99,"Alec Pierce":100,
+  "Dallas Goedert":101,"Trevor Lawrence":102,"Jacory Croskey-Merritt":103,"Mark Andrews":104,
+  "Jake Ferguson":105,"Dalton Schultz":106,"Dak Prescott":107,"Jordan Addison":108,
+  "George Kittle":109,"Jordan Mason":110,"Zach Charbonnet":111,"Patrick Mahomes":112,
+  "Juwan Johnson":113,"Brenton Strange":114,"Woody Marks":115,"Wan'Dale Robinson":116,
+  "Travis Kelce":117,"Brock Purdy":118,"Michael Pittman Jr.":119,"Kenyon Sadiq":120,
+  "Tyrone Tracy Jr.":122,"Quentin Johnston":124,"Josh Downs":125,"Emmett Johnson":126,
+  "Isaiah Likely":127,"Trey Benson":128,"Stefon Diggs":130,"Romeo Doubs":131,
+  "Jonah Coleman":132,"Matthew Stafford":133,"Jayden Reed":135,"Alvin Kamara":136,
+  "Khalil Shakir":137,"Bo Nix":138,"Xavier Worthy":139,"Tyjae Spears":140,
+  "Jauan Jennings":141,"Rachaad White":142,"AJ Barner":144,"Jordan Love":145,
+  "T.J. Hockenson":146,"Denver Broncos":147,"Dylan Sampson":148,"KC Concepcion":150,
+  "Deebo Samuel":159,"Stefon Diggs":130,"Colby Parkinson":156,"Chigoziem Okonkwo":157,
+  "Mason Taylor":158,"Eli Stowers":162,"Tyreek Hill":171,"Terrance Ferguson":165,
+  "Houston Texans":129,"Seattle Seahawks":134,"Philadelphia Eagles":143,
+  "Baltimore Ravens":161,"New England Patriots":170,"Minnesota Vikings":184,
+  "Detroit Lions":193,"Jacksonville Jaguars":209,"Pittsburgh Steelers":221,
+  "Kansas City Chiefs":227,"New York Giants":235,"Los Angeles Chargers":242,
+  "Green Bay Packers":253,"Dallas Cowboys":254,"Chicago Bears":259,
+  "San Francisco 49ers":265,"Indianapolis Colts":272,"Buffalo Bills":273,
+  "Los Angeles Rams":123,"Atlanta Falcons":274,"Tampa Bay Buccaneers":277,
+  "Carolina Panthers":280,"Cincinnati Bengals":281,"New Orleans Saints":284,
+  "Cleveland Browns":289,"Tennessee Titans":290,"Arizona Cardinals":291,
+  "Las Vegas Raiders":292,"New York Jets":293,"Miami Dolphins":295,
+};
+
+function getEffectiveRank(player, rankingMode){
+  if(rankingMode==="sleeper"){
+    // Try exact name match, then partial match
+    const adp = SLEEPER_ADP[player.name];
+    if(adp) return adp;
+    // Fallback to ECR if not found in Sleeper data
+    return player.rank + 500;
+  }
+  return player.rank;
+}
+
+function simPick(players,drafted,variability,roster,round,nRounds,slots,tend,rankingMode="ecr"){
   const avail=players.filter(p=>!drafted.has(p.name));
   if(!avail.length)return null;
-  // Tendency decays exponentially by round: full strength early, near-neutral late.
-  // decay = e^(-0.3*(round-1)) → 1.0 at R1, ~0.33 at R5, ~0.10 at R9, ~0.03 at R12
   const decay=Math.exp(-0.3*(round-1));
+  // Round-based chaos scaling: subtle increase from 1.0x (R1) to 1.5x (R14)
+  const roundScale = 1.0 + 0.5 * (round - 1) / 13;
+  const effectiveVariability = variability * roundScale;
   const scored=avail.map(p=>{
-    const sd=Math.max(1.5,p.rank*0.10+1.0)*variability;
+    const effRank = getEffectiveRank(p, rankingMode);
+    const sd=Math.max(1.5,effRank*0.10+1.0)*effectiveVariability;
     const tv=tend[p.pos]??1;
-    // Blend tendency toward neutral (1.0) as rounds progress
     const effectiveTend=1+(tv-1)*decay;
-    return{player:p,score:(p.rank+gauss()*sd)*effectiveTend*needPenalty(p.pos,roster,round,nRounds,slots)};
+    return{player:p,score:(effRank+gauss()*sd)*effectiveTend*needPenalty(p.pos,roster,round,nRounds,slots)};
   });
   scored.sort((a,b)=>a.score-b.score);
   return scored[0].player;
@@ -767,7 +831,7 @@ function simPick(players,drafted,variability,roster,round,nRounds,slots,tend){
  * Guaranteed monotone within each position group. Fast O(n log n).
  */
 function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
-                          numRounds,rosterSlots,tendencies,variability,teams){
+                          numRounds,rosterSlots,tendencies,variability,teams,rankingMode="ecr"){
   const isMyTurnNow=order[currentPickIdx]&&order[currentPickIdx].teamIdx===myIdx&&!picks[order[currentPickIdx].overall];
 
   let searchFrom=isMyTurnNow?currentPickIdx+1:currentPickIdx;
@@ -808,7 +872,11 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
   const playerRanks=new Float32Array(N);
   const playerPos=[];
   const playerNames=[];
-  availPlayers.forEach((p,i)=>{playerRanks[i]=p.rank;playerPos[i]=p.pos;playerNames[i]=p.name;});
+  availPlayers.forEach((p,i)=>{
+    playerRanks[i]=getEffectiveRank(p,rankingMode);
+    playerPos[i]=p.pos;
+    playerNames[i]=p.name;
+  });
 
   // Monte Carlo: 200 runs — fast enough (~75ms worst case) and stable enough
   // that same-position ordering is consistent
@@ -855,14 +923,12 @@ function computeSurvival(availPlayers,picks,order,currentPickIdx,myIdx,
     out[playerNames[i]]=survivalCount[i]/RUNS;
   }
 
-  // Enforce monotonicity within each position group:
-  // A worse player (higher rank number) must have >= survival prob than the better player.
-  // Walk from best to worst, ensuring each is >= the previous.
+  // Enforce monotonicity within each position group using effective rank order
   const posList=['QB','RB','WR','TE','DST','K'];
   for(const pos of posList){
     const posPlayers=[...availPlayers]
       .filter(p=>p.pos===pos)
-      .sort((a,b)=>a.rank-b.rank); // best first (rank 1 = best)
+      .sort((a,b)=>getEffectiveRank(a,rankingMode)-getEffectiveRank(b,rankingMode));
     let prev=0.0;
     for(const p of posPlayers){
       const floored=Math.max(out[p.name]??0, prev);
@@ -1521,7 +1587,8 @@ function App(){
   const[teams,setTeams]=useState(saved.teams||DEF_TEAMS);
   const[myTeam,setMyTeam]=useState(saved.myTeam||DEF_MY);
   const[mode,setMode]=useState("mock");
-  const[variability,setVariability]=useState(1.5);
+  const[rankingMode,setRankingMode]=useState(saved.rankingMode||"ecr");
+  const[variability,setVariability]=useState(1.25);
   const[players,setPlayers]=useState(saved.players||[]);
   const[ranksMeta,setRanksMeta]=useState(saved.ranksMeta||null);
   const[draftOrder,setDraftOrder]=useState([]);
@@ -1615,7 +1682,7 @@ function App(){
   }
 
   useEffect(()=>{
-    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes});
+    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes,rankingMode});
   },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue]);
 
   const myIdx=teams.indexOf(myTeam);
@@ -1724,7 +1791,7 @@ function App(){
       if(np[pick.overall]){idx++;step();return}
       if(pick.teamIdx===myIdx){setPicks(np);setCurrentPickIdx(idx);setIsSimming(false);return}
       const roster=getRoster(np,order,pick.teamIdx);
-      const pl=simPick(players,new Set(Object.values(np).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies);
+      const pl=simPick(players,new Set(Object.values(np).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies,rankingMode);
       if(!pl){setIsSimming(false);return}
       np={...np,[pick.overall]:pl};idx++;
       setPicks({...np});
@@ -1754,7 +1821,7 @@ function App(){
         if(sp[pick.overall]){idx++;step();return}
         if(pick.teamIdx===myIdx){setPicks(sp);setCurrentPickIdx(idx);setIsSimming(false);return}
         const roster=getRoster(sp,order,pick.teamIdx);
-        const pl=simPick(players,new Set(Object.values(sp).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies);
+        const pl=simPick(players,new Set(Object.values(sp).map(p=>p.name)),variability,roster,pick.round,numRounds,rosterSlots,tendencies,rankingMode);
         if(!pl){setIsSimming(false);return}
         sp={...sp,[pick.overall]:pl};idx++;
         setPicks({...sp});
@@ -1782,16 +1849,22 @@ function App(){
     return true;
   }),[players,drafted,rosterSlots]);
 
-  const avail=useMemo(()=>players.filter(p=>{
-    if(drafted.has(p.name))return false;
-    // K and DST hidden unless roster explicitly has slots for them
-    if(p.pos==="K"&&!(rosterSlots.K>0))return false;
-    if(p.pos==="DST"&&!(rosterSlots.DST>0))return false;
-    if(filterPos==="RB/WR"&&p.pos!=="RB"&&p.pos!=="WR")return false;
-    if(filterPos!=="ALL"&&filterPos!=="RB/WR"&&p.pos!==filterPos)return false;
-    if(search&&!p.name.toLowerCase().includes(search.toLowerCase())&&!p.team.toLowerCase().includes(search.toLowerCase()))return false;
-    return true;
-  }),[players,drafted,filterPos,search,rosterSlots]);
+  const avail=useMemo(()=>{
+    const filtered=players.filter(p=>{
+      if(drafted.has(p.name))return false;
+      if(p.pos==="K"&&!(rosterSlots.K>0))return false;
+      if(p.pos==="DST"&&!(rosterSlots.DST>0))return false;
+      if(filterPos==="RB/WR"&&p.pos!=="RB"&&p.pos!=="WR")return false;
+      if(filterPos!=="ALL"&&filterPos!=="RB/WR"&&p.pos!==filterPos)return false;
+      if(search&&!p.name.toLowerCase().includes(search.toLowerCase())&&!p.team.toLowerCase().includes(search.toLowerCase()))return false;
+      return true;
+    });
+    // Sort by selected ranking mode
+    if(rankingMode==="sleeper"){
+      return filtered.sort((a,b)=>getEffectiveRank(a,"sleeper")-getEffectiveRank(b,"sleeper"));
+    }
+    return filtered; // already sorted by ECR rank from players array
+  },[players,drafted,filterPos,search,rosterSlots,rankingMode]);
   const rosters={};teams.forEach(t=>rosters[t]=[]);
   order.forEach(pick=>{
     if(picks[pick.overall]){const tn=teams[pick.teamIdx];if(rosters[tn])rosters[tn].push({...picks[pick.overall],pickNum:pick.overall,round:pick.round})}
@@ -1824,11 +1897,11 @@ function App(){
     if(done||screen!=="draft"){setSurvival(null);return;}
     const t=setTimeout(()=>{
       setSurvival(computeSurvival(availAllRef.current,picks,order,currentPickIdx,myIdx,
-        numRounds,rosterSlots,tendencies,variability,teams));
+        numRounds,rosterSlots,tendencies,variability,teams,rankingMode));
     },80);
     return()=>clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[survivalPicksKey,mode,done]);
+  },[survivalPicksKey,mode,done,rankingMode]);
 
   // Always fetch fresh rankings on startup — ensures date and player list stay current
   // even when returning users have a cached version in localStorage
@@ -2016,6 +2089,21 @@ function App(){
                     ))}
                   </div>
                 </div>
+                <div className="frow" style={{marginTop:12}}>
+                  <label>Rankings</label>
+                  <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                    {[["ecr","FantasyPros ECR"],["sleeper","Sleeper ADP"]].map(([v,l])=>(
+                      <label key={v} style={{display:"flex",alignItems:"center",gap:7,cursor:"pointer",fontSize:13,fontWeight:500}}>
+                        <input type="radio" checked={rankingMode===v} onChange={()=>setRankingMode(v)}/> {l}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {rankingMode==="sleeper"&&(
+                  <div style={{marginTop:8,fontSize:11,color:"var(--text3)",fontStyle:"italic"}}>
+                    Sleeper ADP snapshot from Draft Sharks · Aug 25 2026 · Standard scoring · POS column always shows FantasyPros ECR
+                  </div>
+                )}
               </div>
 
               {/* Next button + rankings date */}
@@ -2387,6 +2475,7 @@ function App(){
                 survival={survival} lastPick={lastPick} isSimming={isSimming}
                 playerNotes={playerNotes} setPlayerNotes={setPlayerNotes}
                 queue={queue} setQueue={setQueue}
+                rankingMode={rankingMode}
               />
             </>
           )}
@@ -3637,7 +3726,7 @@ function QueueList({queue,setQueue,drafted,canPick,onPick}){
 function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,setSelPlayer,
                      canPick,curTeam,mode,onPick,survival,lastPick,isSimming,
                      playerNotes,setPlayerNotes,queue,setQueue,
-                     picks,teams,order,drafted}){
+                     picks,teams,order,drafted,rankingMode="ecr"}){
 
   // Build a lookup: player name → team that drafted them
   const draftedByTeam=useMemo(()=>{
@@ -3778,7 +3867,9 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
                 onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
                 {/* Single row: rank · name · pos · team/bye · note · queue · pick */}
                 <div style={{display:"flex",alignItems:"center",gap:6}} onClick={e=>e.stopPropagation()}>
-                  <span className="pcard-rank" onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>#{p.rank}</span>
+                  <span className="pcard-rank" onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
+                    #{rankingMode==="sleeper"?(SLEEPER_ADP[p.name]??p.rank):p.rank}
+                  </span>
                   <span className="pcard-name" style={{flex:1,cursor:isDrafted?"default":"pointer"}}
                     onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>{p.name}</span>
                   <PB pos={p.pos} posRank={p.posRank}/>
