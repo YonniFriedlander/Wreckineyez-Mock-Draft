@@ -613,6 +613,33 @@ const DEF_ROSTER={QB:1,RB:2,WR:3,TE:1,FLEX:1,DST:1,BN:5};
 const DEF_TEND={QB:1,RB:1,WR:1,TE:1,DST:1};
 // 2026 traded picks (pre-loaded from league Excel)
 // Leigh=1,Stan=2,Bram=3,Rob=4,Bruce=5,Cory=6,Liam=7,James=8,Pat=9,Budd=10,Chow=11,Evan=12,Yonni=13,Aaron=14
+const DEF_KEEPERS=[
+  {team:"Aaron", player:"Jonathan Taylor",    round:"2"},
+  {team:"Aaron", player:"Rashee Rice",        round:"3"},
+  {team:"Yonni", player:"Jaxon Smith-Njigba", round:"3"},
+  {team:"Yonni", player:"Brock Bowers",       round:"5"},
+  {team:"Evan",  player:"James Cook III",     round:"2"},
+  {team:"Evan",  player:"Puka Nacua",         round:"3"},
+  {team:"Chow",  player:"Bijan Robinson",     round:"1-only"},
+  {team:"Budd",  player:"George Pickens",     round:"3", pickSlot:30},
+  {team:"Budd",  player:"Javonte Williams",   round:"5"},
+  {team:"Pat",   player:"Nico Collins",       round:"2"},
+  {team:"Pat",   player:"Zay Flowers",        round:"3"},
+  {team:"James", player:"De'Von Achane",      round:"3"},
+  {team:"James", player:"Emeka Egbuka",       round:"4"},
+  {team:"Liam",  player:"Chris Olave",        round:"4"},
+  {team:"Liam",  player:"Colston Loveland",   round:"6"},
+  {team:"Bram",  player:"Chase Brown",        round:"3"},
+  {team:"Bram",  player:"Luther Burden III",  round:"7"},
+  {team:"Rob",   player:"Travis Etienne Jr.", round:"4"},
+  {team:"Rob",   player:"Bhayshul Tuten",     round:"6"},
+  {team:"Leigh", player:"Cam Skattebo",       round:"4"},
+  {team:"Leigh", player:"Blake Corum",        round:"7"},
+  {team:"Stan",  player:"DeVonta Smith",      round:"2"},
+  {team:"Stan",  player:"Christian Watson",   round:"4", pickSlot:54},
+  {team:"Bruce", player:"Alec Pierce",        round:"8"},
+  {team:"Bruce", player:"Quinshon Judkins",   round:"5"},
+];
 const DEF_TRADED_PICKS=[
   {fromPick:14,toTeam:"Rob"},    // Aaron R1 → Rob
   {fromPick:60,toTeam:"Aaron"},  // Rob R5 → Aaron
@@ -628,13 +655,22 @@ const DEF_TRADED_PICKS=[
   {fromPick:77,toTeam:"Yonni"},  // James R6 → Yonni
   {fromPick:13,toTeam:"James"},  // Yonni R1 → James
   {fromPick:115,toTeam:"Rob"},   // Bram R9 → Rob  (9.03)
-  {fromPick:88,toTeam:"Bram"},   // Rob R7 → Bram  (7.04)
+  {fromPick:88,toTeam:"Stan"},   // Rob R7 → Bram → Stan (7.04, updated)
   {fromPick:59,toTeam:"Yonni"},  // Bram R5 → Yonni (5.03)
   {fromPick:100,toTeam:"Bram"},  // Yonni R8 → Bram (8.02)
   {fromPick:19,toTeam:"Stan"},   // Budd R2 → Stan
   {fromPick:75,toTeam:"Stan"},   // Budd R6 → Stan
   {fromPick:30,toTeam:"Budd"},   // Stan R3 → Budd
   {fromPick:55,toTeam:"Budd"},   // Stan R4 → Budd
+  {fromPick:82,toTeam:"James"},  // Bram R6 → James (6.12)
+  {fromPick:64,toTeam:"Bram"},   // James R5 → Bram (5.08)
+  {fromPick:111,toTeam:"Leigh"}, // Stan R8 → Leigh
+  {fromPick:58,toTeam:"Leigh"},  // Stan R5 → Leigh
+  {fromPick:57,toTeam:"Bram"},   // Leigh R5 → Stan → Bram
+  {fromPick:140,toTeam:"Stan"},  // Leigh R10 → Stan
+  {fromPick:54,toTeam:"Stan"},   // Bram R4 → Stan
+  {fromPick:80,toTeam:"Liam"},   // Bruce R6 → Liam
+  {fromPick:91,toTeam:"Bruce"},  // Liam R7 → Bruce
 ];
 const SK="wreckineyez-mock-v5";
 
@@ -1047,9 +1083,14 @@ function PreDraftBoard({teams,myTeam,numRounds,players,keepers,setKeepers,traded
 
   const keeperByPick={};
   keepers.forEach(k=>{
-    const ti=teams.indexOf(k.team);
-    const slot=order.find(p=>p.round===parseInt(k.round)&&p.teamIdx===ti);
-    if(slot)keeperByPick[slot.overall]=k;
+    if(k.pickSlot){
+      // Explicit slot override for keepers on traded picks
+      keeperByPick[k.pickSlot]=k;
+    } else {
+      const ti=teams.indexOf(k.team);
+      const slot=order.find(p=>p.round===parseInt(k.round)&&p.teamIdx===ti);
+      if(slot)keeperByPick[slot.overall]=k;
+    }
   });
   const tradeByPick={};
   tradedPicks.forEach(t=>tradeByPick[t.fromPick]=t);
@@ -1594,7 +1635,7 @@ function App(){
   const[draftOrder,setDraftOrder]=useState([]);
   const[picks,setPicks]=useState({});
   const[currentPickIdx,setCurrentPickIdx]=useState(0);
-  const[keepers,setKeepers]=useState(saved.keepers||[]);
+  const[keepers,setKeepers]=useState(DEF_KEEPERS);
   // Silent migration: patch Bram-Chow trade if saved state has old Bruce→Bram entry
   const savedTrades = saved.tradedPicks || DEF_TRADED_PICKS;
   const patchedTrades = (() => {
@@ -1607,17 +1648,27 @@ function App(){
         .map(t=>t.fromPick===89&&t.toTeam==="Bram" ? {...t,toTeam:"Chow"} : t)
         .concat([{fromPick:74,toTeam:"Bram"}]);
     }
-    // Add new trades if missing
+    // Add new trades if missing; update #88 from Bram to Stan
     const newTrades = [
       {fromPick:115,toTeam:"Rob"},
-      {fromPick:88,toTeam:"Bram"},
       {fromPick:59,toTeam:"Yonni"},
       {fromPick:100,toTeam:"Bram"},
       {fromPick:19,toTeam:"Stan"},
       {fromPick:75,toTeam:"Stan"},
       {fromPick:30,toTeam:"Budd"},
       {fromPick:55,toTeam:"Budd"},
+      {fromPick:82,toTeam:"James"},
+      {fromPick:64,toTeam:"Bram"},
+      {fromPick:111,toTeam:"Leigh"},
+      {fromPick:58,toTeam:"Leigh"},
+      {fromPick:57,toTeam:"Bram"},
+      {fromPick:140,toTeam:"Stan"},
+      {fromPick:54,toTeam:"Stan"},
+      {fromPick:80,toTeam:"Liam"},
+      {fromPick:91,toTeam:"Bruce"},
     ];
+    // Update #88 destination from Bram to Stan if still set to Bram
+    trades = trades.map(t=>t.fromPick===88&&t.toTeam==="Bram" ? {...t,toTeam:"Stan"} : t);
     for(const t of newTrades){
       if(!trades.some(x=>x.fromPick===t.fromPick&&x.toTeam===t.toTeam)){
         trades = [...trades, t];
@@ -1625,7 +1676,7 @@ function App(){
     }
     return trades;
   })();
-  const[tradedPicks,setTradedPicks]=useState(patchedTrades);
+  const[tradedPicks,setTradedPicks]=useState(DEF_TRADED_PICKS);
   const savedRoster=saved.rosterSlots||DEF_ROSTER;
   const[rosterSlots,setRosterSlots]=useState(savedRoster.DST!=null?savedRoster:{...savedRoster,DST:1});
   const[tendencies,setTendencies]=useState(saved.tendencies||DEF_TEND);
@@ -1763,14 +1814,14 @@ function App(){
     const np={};
     keepers.forEach(k=>{
       const round=parseInt(k.round);const ti=teams.indexOf(k.team);if(ti<0)return;
-      // Find the team's ORIGINAL pick in this round (before trade reassignment).
-      // If a team has multiple picks in the round (e.g. their own + a traded-in pick),
-      // the keeper should consume the original pick, not a pick they acquired via trade.
-      // originalOwnerIdx tells us who originally owned each pick before trades.
-      const originalOrder=order; // original order before trade remapping
-      const originalSlot=originalOrder.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
-      // Fall back to effective order slot if no original found (e.g. traded their own away)
-      const slot=originalSlot||eff.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
+      let slot;
+      if(k.pickSlot){
+        // Explicit slot override for keepers on traded picks
+        slot = order.find(p=>p.overall===k.pickSlot);
+      } else {
+        const originalSlot=order.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
+        slot=originalSlot||eff.find(p=>p.round===round&&p.teamIdx===ti&&!np[p.overall]);
+      }
       if(!slot)return;
       const pl=players.find(p=>p.name.toLowerCase()===k.player.toLowerCase());
       if(pl)np[slot.overall]=pl;
