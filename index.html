@@ -940,7 +940,7 @@ function AC({value,onChange,players,placeholder}){
       {open&&matches.length>0&&(
         <div className="ac-list">
           {matches.map(p=>(
-            <div key={p.name} className="ac-item" onMouseDown={()=>pick(p)}>
+            <div key={p.name+"-"+p.rank} className="ac-item" onMouseDown={()=>pick(p)}>
               <PB pos={p.pos} posRank={p.posRank}/>
               <span style={{fontWeight:600}}>{p.name}</span>
               <span style={{color:"var(--text3)",fontSize:11,marginLeft:"auto"}}>{p.team}</span>
@@ -1657,7 +1657,12 @@ function App(){
       if(!r.ok)throw new Error(`Could not load ${file} (HTTP ${r.status}). Make sure it's uploaded next to index.html.`);
       const json=await r.json();
       if(!json.players||!json.players.length)throw new Error(`${file} has no players in it.`);
-      setPlayers(json.players);
+      // Deduplicate by name, keeping the entry with the lowest rank
+      const seen=new Map();
+      for(const p of json.players){
+        if(!seen.has(p.name)||p.rank<seen.get(p.name).rank) seen.set(p.name,p);
+      }
+      setPlayers([...seen.values()].sort((a,b)=>a.rank-b.rank));
       setRanksMeta({
         name:`FantasyPros ${source.toUpperCase()}${json.updated?"":""}`,
         date:json.updated?new Date(json.updated).toLocaleDateString():new Date().toLocaleDateString(),
@@ -3826,7 +3831,7 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
             const inQueue=queue?.includes(p.name);
             const hasNote=!!(playerNotes?.[p.name]);
             return(
-              <div key={p.name} className={`pcard${sel?" sel":""}`}
+              <div key={p.name+"-"+p.rank} className={`pcard${sel?" sel":""}`}
                 style={isDrafted?{opacity:0.5}:{}}
                 onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
                 {/* Single row: rank · name · pos · team/bye · note · queue · pick */}
@@ -3944,7 +3949,7 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
               const tier=sv!=null?tierFor(sv):null;
               const inQueue=queue?.includes(p.name);
               return(
-                <tr key={p.name} className={`pr${sel?" sel":""}`}
+                <tr key={p.name+"-"+p.rank} className={`pr${sel?" sel":""}`}
                   style={isDrafted?{opacity:0.45}:{}}
                   onClick={()=>!isDrafted&&setSelPlayer(sel?null:p)}>
                   <td style={{color:"var(--text3)",fontSize:12,fontWeight:600}}>{p.rank}</td>
@@ -4156,7 +4161,7 @@ function LiveBoard({order,picks,teams,myIdx,numRounds,currentPickIdx,tradedPicks
               {editResults.length>0&&(
                 <div className="ac-list">
                   {editResults.map(p=>(
-                    <div key={p.name} className="ac-item" onClick={()=>{
+                    <div key={p.name+"-"+p.rank} className="ac-item" onClick={()=>{
                       onEditPick(editModal.overall,p);
                       setEditModal(null);
                     }}>
