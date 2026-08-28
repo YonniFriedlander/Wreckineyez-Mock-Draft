@@ -1566,7 +1566,7 @@ function App(){
   const[myTeam,setMyTeam]=useState(saved.myTeam||DEF_MY);
   const[mode,setMode]=useState("mock");
   const[variability,setVariability]=useState(1.25);
-  const[players,setPlayers]=useState(saved.players||[]);
+  const[players,setPlayers]=useState([]);
   const[ranksMeta,setRanksMeta]=useState(saved.ranksMeta||null);
   const[draftOrder,setDraftOrder]=useState([]);
   const[picks,setPicks]=useState({});
@@ -1669,8 +1669,8 @@ function App(){
   }
 
   useEffect(()=>{
-    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue,generalNotes});
-  },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,players,ranksMeta,playerNotes,queue]);
+    save({teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,ranksMeta,playerNotes,queue,generalNotes});
+  },[teams,myTeam,numRoundsOverride,keepers,tradedPicks,rosterSlots,tendencies,ranksMeta,playerNotes,queue]);
 
   const myIdx=teams.indexOf(myTeam);
 
