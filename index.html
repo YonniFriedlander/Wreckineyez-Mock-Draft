@@ -3759,7 +3759,7 @@ function AvailPanel({avail,filterPos,setFilterPos,search,setSearch,selPlayer,set
         <input value={search} onChange={e=>setSearch(e.target.value)}
           placeholder="Search player or NFL team…" style={{flex:1,minWidth:160}}/>
         <div className="pills">
-          {POSITIONS.map(p=><button key={p} className={`pill${filterPos===p?" on":""}`} onClick={()=>setFilterPos(p)}>{p}</button>)}
+          {POSITIONS.map(p=><button key={p} className={`pill${filterPos===p?" on":""}`} onClick={()=>{setFilterPos(p);setSelPlayer(null);}}>{p}</button>)}
         </div>
       </div>
 
